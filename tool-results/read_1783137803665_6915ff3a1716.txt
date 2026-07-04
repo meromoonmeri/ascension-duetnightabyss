@@ -1,0 +1,770 @@
+     1→     1→"use client";
+     2→     2→
+     3→     3→import { useEffect, useState, useRef, useCallback } from "react";
+     4→     4→import Image from "next/image";
+     5→     5→import {
+     6→     6→  ChevronRight, ChevronDown,
+     7→     7→  Pencil, Settings, LogOut,
+     8→     8→} from "lucide-react";
+     9→     9→import { useNavigation, type PageType } from "@/store/navigationStore";
+    10→    10→import { useCms } from "@/store/cmsStore";
+    11→    11→import { useSession, signIn, signOut } from "next-auth/react";
+    12→    12→
+    13→    13→/* ═══════════════════════════════════════════════════════════════
+    14→    14→   HOOVERSESE-STYLE HEADER — For sub-pages
+    15→    15→   ═══════════════════════════════════════════════════════════════ */
+    16→    16→
+    17→    17→const WHITE = "#FFFFFF";
+    18→    18→const WHITE60 = "rgba(255,255,255,0.6)";
+    19→    19→const WHITE08 = "rgba(255,255,255,0.08)";
+    20→    20→const WHITE04 = "rgba(255,255,255,0.04)";
+    21→    21→
+    22→    22→const SECTION_COLORS: Record<string, string> = {
+    23→    23→  HOME: "#E8A735",
+    24→    24→  "LE MONDE": "#8B5CF6",
+    25→    25→  EXPLORER: "#4ECDC4",
+    26→    26→  COMMUNAUTÉ: "#FF6B6B",
+    27→    27→  "LOG IN": "#5865F2",
+    28→    28→};
+    29→    29→
+    30→    30→interface SubItem {
+    31→    31→  label: string;
+    32→    32→  page: PageType;
+    33→    33→  image?: string;
+    34→    34→}
+    35→    35→
+    36→    36→interface NavGroup {
+    37→    37→  label: string;
+    38→    38→  page?: PageType;
+    39→    39→  children?: SubItem[];
+    40→    40→  isLogin?: boolean;
+    41→    41→}
+    42→    42→
+    43→    43→const NAV_GROUPS: NavGroup[] = [
+    44→    44→  { label: "HOME", page: "home" },
+    45→    45→  {
+    46→    46→    label: "LE MONDE",
+    47→    47→    children: [
+    48→    48→      { label: "Cosmologie", page: "cosmology" },
+    49→    49→      { label: "Géographie", page: "geography" },
+    50→    50→      { label: "Royaumes", page: "royaumes" },
+    51→    51→      { label: "Système d'Énergie", page: "grimoire" },
+    52→    52→    ],
+    53→    53→  },
+    54→    54→  {
+    55→    55→    label: "EXPLORER",
+    56→    56→    children: [
+    57→    57→      { label: "Races", page: "races" },
+    58→    58→      { label: "Arts", page: "arts" },
+    59→    59→      { label: "Bestiaire", page: "bestiary" },
+    60→    60→      { label: "Artefacts", page: "artefacts" },
+    61→    61→      { label: "Factions", page: "factions" },
+    62→    62→      { label: "Arbres de Compétences", page: "skilltree" },
+    63→    63→    ],
+    64→    64→  },
+    65→    65→  {
+    66→    66→    label: "COMMUNAUTÉ",
+    67→    67→    children: [
+    68→    68→      { label: "News", page: "news" },
+    69→    69→      { label: "Événements", page: "events" },
+    70→    70→      { label: "Banque", page: "bank" },
+    71→    71→      { label: "Boutique", page: "shop" },
+    72→    72→    ],
+    73→    73→  },
+    74→    74→  { label: "LOG IN", isLogin: true },
+    75→    75→];
+    76→    76→
+    77→    77→const ADMIN_DISCORD_ID = "722146261381415043";
+    78→    78→
+    79→    79→/* ─── Music Bars Animation Component ─── */
+    80→    80→function MusicBars() {
+    81→    81→  const [playing, setPlaying] = useState(false);
+    82→    82→
+    83→    83→  return (
+    84→    84→    <>
+    85→    85→      <button
+    86→    86→        onClick={() => setPlaying(!playing)}
+    87→    87→        className="flex items-end gap-[2px] shrink-0 cursor-pointer"
+    88→    88→        style={{ height: 16, padding: "0 4px" }}
+    89→    89→        aria-label={playing ? "Pause musique" : "Lire musique"}
+    90→    90→      >
+    91→    91→        <style>{`
+    92→    92→          @keyframes musicBar1 { 0%,100% { height: 4px; } 50% { height: 14px; } }
+    93→    93→          @keyframes musicBar2 { 0%,100% { height: 10px; } 50% { height: 4px; } }
+    94→    94→          @keyframes musicBar3 { 0%,100% { height: 6px; } 50% { height: 12px; } }
+    95→    95→        `}</style>
+    96→    96→        <div
+    97→    97→          className="rounded-full"
+    98→    98→          style={{
+    99→    99→            width: 2,
+   100→   100→            height: 4,
+   101→   101→            background: playing ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.3)",
+   102→   102→            animation: playing ? "musicBar1 0.8s ease-in-out infinite" : "none",
+   103→   103→            transition: "background 0.2s ease",
+   104→   104→          }}
+   105→   105→        />
+   106→   106→        <div
+   107→   107→          className="rounded-full"
+   108→   108→          style={{
+   109→   109→            width: 2,
+   110→   110→            height: 10,
+   111→   111→            background: playing ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.3)",
+   112→   112→            animation: playing ? "musicBar2 0.8s ease-in-out infinite" : "none",
+   113→   113→            animationDelay: "0.15s",
+   114→   114→            transition: "background 0.2s ease",
+   115→   115→          }}
+   116→   116→        />
+   117→   117→        <div
+   118→   118→          className="rounded-full"
+   119→   119→          style={{
+   120→   120→            width: 2,
+   121→   121→            height: 6,
+   122→   122→            background: playing ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.3)",
+   123→   123→            animation: playing ? "musicBar3 0.8s ease-in-out infinite" : "none",
+   124→   124→            animationDelay: "0.3s",
+   125→   125→            transition: "background 0.2s ease",
+   126→   126→          }}
+   127→   127→        />
+   128→   128→      </button>
+   129→   129→      {playing && (
+   130→   130→        <iframe
+   131→   131→          src="https://www.youtube.com/embed/Y2B6dARUEqo?autoplay=1&loop=1&playlist=RDY2B6dARUEqo&controls=0&showinfo=0&rel=0&enablejsapi=1"
+   132→   132→          allow="autoplay; encrypted-media"
+   133→   133→          style={{
+   134→   134→            position: 'fixed',
+   135→   135→            bottom: -100,
+   136→   136→            right: -100,
+   137→   137→            width: 1,
+   138→   138→            height: 1,
+   139→   139→            pointerEvents: 'none',
+   140→   140→            opacity: 0,
+   141→   141→          }}
+   142→   142→          title="Background Music"
+   143→   143→        />
+   144→   144→      )}
+   145→   145→    </>
+   146→   146→  );
+   147→   147→}
+   148→   148→
+   149→   149→/* ─── Banner image per nav group ─── */
+   150→   150→const DROPDOWN_BANNERS: Record<string, string> = {
+   151→   151→  "LE MONDE": "/dropdown-monde.jpg",
+   152→   152→  EXPLORER: "/dropdown-explorer.jpg",
+   153→   153→  COMMUNAUTÉ: "/dropdown-communaute.jpg",
+   154→   154→};
+   155→   155→
+   156→   156→/* ─── Dropdown Component ─── */
+   157→   157→function NavDropdown({
+   158→   158→  group,
+   159→   159→  isOpen,
+   160→   160→  onNavigate,
+   161→   161→  onClose,
+   162→   162→  accentColor,
+   163→   163→  bannerImage,
+   164→   164→}: {
+   165→   165→  group: NavGroup;
+   166→   166→  isOpen: boolean;
+   167→   167→  onNavigate: (page: PageType) => void;
+   168→   168→  onClose: () => void;
+   169→   169→  accentColor: string;
+   170→   170→  bannerImage?: string;
+   171→   171→}) {
+   172→   172→  if (!isOpen || !group.children) return null;
+   173→   173→  const hasBanner = !!bannerImage;
+   174→   174→
+   175→   175→  const cols = group.children.length <= 4 ? group.children.length : 5;
+   176→   176→  const totalWidth = hasBanner ? Math.max(cols * 130, 380) : 220;
+   177→   177→
+   178→   178→  return (
+   179→   179→    <div
+   180→   180→      className="hoyo-dropdown absolute top-full left-0 z-50 pt-2"
+   181→   181→      style={{
+   182→   182→        minWidth: totalWidth,
+   183→   183→        opacity: isOpen ? 1 : 0,
+   184→   184→        pointerEvents: isOpen ? "auto" : "none",
+   185→   185→        transition: "opacity 0.15s ease",
+   186→   186→      }}
+   187→   187→    >
+   188→   188→      <div
+   189→   189→        style={{
+   190→   190→          background: "rgba(5,5,8,0.95)",
+   191→   191→          backdropFilter: "blur(24px)",
+   192→   192→          border: "1px solid rgba(255,255,255,0.06)",
+   193→   193→          borderRadius: 8,
+   194→   194→          overflow: "hidden",
+   195→   195→          boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+   196→   196→        }}
+   197→   197→      >
+   198→   198→        {/* Banner — desktop only */}
+   199→   199→        {hasBanner && (
+   200→   200→          <div className="relative hidden lg:block" style={{ height: 130, width: '100%' }}>
+   201→   201→            <Image
+   202→   202→              src={bannerImage}
+   203→   203→              alt=""
+   204→   204→              fill
+   205→   205→              className="object-cover"
+   206→   206→              sizes={`${totalWidth}px`}
+   207→   207→              priority={false}
+   208→   208→            />
+   209→   209→            <div
+   210→   210→              className="absolute inset-0"
+   211→   211→              style={{
+   212→   212→                background: "linear-gradient(to top, rgba(5,5,8,0.98) 0%, rgba(5,5,8,0.4) 50%, transparent 100%)",
+   213→   213→              }}
+   214→   214→            />
+   215→   215→          </div>
+   216→   216→        )}
+   217→   217→
+   218→   218→        {/* Grid of mini cards — desktop */}
+   219→   219→        {hasBanner ? (
+   220→   220→          <div
+   221→   221→            className="hidden lg:grid gap-1.5 p-3"
+   222→   222→            style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
+   223→   223→          >
+   224→   224→            {group.children.map((child) => (
+   225→   225→              <button
+   226→   226→                key={child.page}
+   227→   227→                onClick={() => { onNavigate(child.page); onClose(); }}
+   228→   228→                className="flex flex-col items-center justify-center gap-1.5 py-3 px-2 rounded-md transition-all duration-200 group"
+   229→   229→                style={{
+   230→   230→                  background: "rgba(255,255,255,0.02)",
+   231→   231→                  border: "1px solid rgba(255,255,255,0.04)",
+   232→   232→                }}
+   233→   233→                onMouseEnter={(e) => {
+   234→   234→                  const el = e.currentTarget as HTMLElement;
+   235→   235→                  el.style.background = "rgba(255,255,255,0.06)";
+   236→   236→                  el.style.borderColor = accentColor;
+   237→   237→                  el.style.boxShadow = `0 0 12px ${accentColor}22`;
+   238→   238→                  const label = el.querySelector("span");
+   239→   239→                  if (label) (label as HTMLElement).style.color = accentColor;
+   240→   240→                }}
+   241→   241→                onMouseLeave={(e) => {
+   242→   242→                  const el = e.currentTarget as HTMLElement;
+   243→   243→                  el.style.background = "rgba(255,255,255,0.02)";
+   244→   244→                  el.style.borderColor = "rgba(255,255,255,0.04)";
+   245→   245→                  el.style.boxShadow = "none";
+   246→   246→                  const label = el.querySelector("span");
+   247→   247→                  if (label) (label as HTMLElement).style.color = WHITE60;
+   248→   248→                }}
+   249→   249→              >
+   250→   250→                <ChevronRight
+   251→   251→                  size={12}
+   252→   252→                  style={{ color: WHITE08, transition: "color 0.2s" }}
+   253→   253→                />
+   254→   254→                <span
+   255→   255→                  style={{
+   256→   256→                    fontFamily: "'Inter', sans-serif",
+   257→   257→                    fontSize: "0.65rem",
+   258→   258→                    fontWeight: 400,
+   259→   259→                    color: WHITE60,
+   260→   260→                    letterSpacing: "0.04em",
+   261→   261→                    textAlign: "center",
+   262→   262→                    lineHeight: 1.3,
+   263→   263→                    transition: "color 0.2s",
+   264→   264→                  }}
+   265→   265→                >
+   266→   266→                  {child.label}
+   267→   267→                </span>
+   268→   268→              </button>
+   269→   269→            ))}
+   270→   270→          </div>
+   271→   271→        ) : (
+   272→   272→          /* Fallback: simple list (no banner) */
+   273→   273→          <div style={{ padding: "6px 0" }}>
+   274→   274→            {group.children.map((child) => (
+   275→   275→              <button
+   276→   276→                key={child.page}
+   277→   277→                onClick={() => { onNavigate(child.page); onClose(); }}
+   278→   278→                className="w-full flex items-center justify-between px-5 py-2.5 text-left transition-colors duration-150 group"
+   279→   279→                style={{
+   280→   280→                  fontFamily: "'Inter', sans-serif",
+   281→   281→                  fontSize: "0.72rem",
+   282→   282→                  fontWeight: 400,
+   283→   283→                  color: WHITE60,
+   284→   284→                  letterSpacing: "0.03em",
+   285→   285→                }}
+   286→   286→                onMouseEnter={(e) => {
+   287→   287→                  (e.currentTarget as HTMLElement).style.color = accentColor;
+   288→   288→                  (e.currentTarget as HTMLElement).style.background = WHITE04;
+   289→   289→                }}
+   290→   290→                onMouseLeave={(e) => {
+   291→   291→                  (e.currentTarget as HTMLElement).style.color = WHITE60;
+   292→   292→                  (e.currentTarget as HTMLElement).style.background = "transparent";
+   293→   293→                }}
+   294→   294→              >
+   295→   295→                <span>{child.label}</span>
+   296→   296→                <ChevronRight size={10} className="opacity-0 group-hover:opacity-30 transition-opacity" />
+   297→   297→              </button>
+   298→   298→            ))}
+   299→   299→          </div>
+   300→   300→        )}
+   301→   301→      </div>
+   302→   302→    </div>
+   303→   303→  );
+   304→   304→}
+   305→   305→
+   306→   306→/* ─── Header Component ─── */
+   307→   307→interface HeaderProps {
+   308→   308→  mode: "full" | "compact";
+   309→   309→  onThemeToggle?: (e: React.MouseEvent) => void;
+   310→   310→}
+   311→   311→
+   312→   312→export default function Header({ mode }: HeaderProps) {
+   313→   313→  const { currentPage, navigate, mobileMenuOpen, setMobileMenuOpen } =
+   314→   314→    useNavigation();
+   315→   315→  const { isEditMode, toggleEditMode } = useCms();
+   316→   316→  const { data: session } = useSession();
+   317→   317→  const isAdmin = session?.user?.discordId === ADMIN_DISCORD_ID;
+   318→   318→  const [openMenu, setOpenMenu] = useState<string | null>(null);
+   319→   319→  const [mobileDropdown, setMobileDropdown] = useState<string | null>(null);
+   320→   320→  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+   321→   321→  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+   322→   322→
+   323→   323→  useEffect(() => {
+   324→   324→    document.body.style.overflow = mobileMenuOpen ? "hidden" : "";
+   325→   325→    return () => { document.body.style.overflow = ""; };
+   326→   326→  }, [mobileMenuOpen]);
+   327→   327→
+   328→   328→  const handleNav = useCallback(
+   329→   329→    (page: PageType) => {
+   330→   330→      navigate(page);
+   331→   331→      setOpenMenu(null);
+   332→   332→    },
+   333→   333→    [navigate],
+   334→   334→  );
+   335→   335→
+   336→   336→  const handleMouseEnter = useCallback((label: string) => {
+   337→   337→    clearTimeout(closeTimeoutRef.current);
+   338→   338→    setOpenMenu(label);
+   339→   339→    setHoveredItem(label);
+   340→   340→  }, []);
+   341→   341→
+   342→   342→  const handleMouseLeave = useCallback(() => {
+   343→   343→    closeTimeoutRef.current = setTimeout(() => {
+   344→   344→      setOpenMenu(null);
+   345→   345→      setHoveredItem(null);
+   346→   346→    }, 250);
+   347→   347→  }, []);
+   348→   348→
+   349→   349→  const isGroupActive = (group: NavGroup): boolean => {
+   350→   350→    if (group.page && group.page === currentPage) return true;
+   351→   351→    if (group.children) return group.children.some((c) => c.page === currentPage);
+   352→   352→    return false;
+   353→   353→  };
+   354→   354→
+   355→   355→  const getSectionColor = (label: string) => SECTION_COLORS[label] || WHITE;
+   356→   356→
+   357→   357→  const getNavColor = (label: string, isActive: boolean, isOpen: boolean) => {
+   358→   358→    const color = getSectionColor(label);
+   359→   359→    if (isActive || isOpen) return color;
+   360→   360→    if (hoveredItem === label) return color;
+   361→   361→    return WHITE60;
+   362→   362→  };
+   363→   363→
+   364→   364→  return (
+   365→   365→    <>
+   366→   366→      {/* ─── NAVBAR ─── */}
+   367→   367→      <header
+   368→   368→        className="fixed top-0 left-0 right-0 z-[100] w-full"
+   369→   369→        style={{
+   370→   370→          height: 60,
+   371→   371→          background: "rgba(5,5,8,0.92)",
+   372→   372→          backdropFilter: "blur(20px)",
+   373→   373→          WebkitBackdropFilter: "blur(20px)",
+   374→   374→          borderBottom: "1px solid rgba(255,255,255,0.04)",
+   375→   375→        }}
+   376→   376→      >
+   377→   377→        <div className="mx-auto flex h-full max-w-[1600px] items-center justify-between px-6 lg:px-10">
+   378→   378→          {/* Logo + Music Bars */}
+   379→   379→          <div className="flex items-center gap-3 shrink-0">
+   380→   380→            <button
+   381→   381→              onClick={() => handleNav("home")}
+   382→   382→              className="flex items-center shrink-0 group"
+   383→   383→              aria-label="Accueil"
+   384→   384→            >
+   385→   385→              <Image
+   386→   386→                src="/logo.png"
+   387→   387→                alt="Ascension"
+   388→   388→                width={110}
+   389→   389→                height={30}
+   390→   390→                className="h-7 w-auto object-contain select-none transition-all duration-300 group-hover:brightness-110"
+   391→   391→                priority
+   392→   392→              />
+   393→   393→            </button>
+   394→   394→            <MusicBars />
+   395→   395→          </div>
+   396→   396→
+   397→   397→          {/* Desktop Nav */}
+   398→   398→          <nav className="hidden lg:flex items-center gap-0.5">
+   399→   399→            {NAV_GROUPS.map((group) => {
+   400→   400→              if (group.isLogin) {
+   401→   401→                /* ─── LOG IN / AVATAR BUTTON ─── */
+   402→   402→                if (session) {
+   403→   403→                  return (
+   404→   404→                    <button
+   405→   405→                      key="logged-in-avatar"
+   406→   406→                      onClick={() => handleNav("profile")}
+   407→   407→                      className="flex items-center gap-2 px-3 py-1.5 transition-all duration-200"
+   408→   408→                      style={{
+   409→   409→                        fontFamily: "'Inter', sans-serif",
+   410→   410→                        fontSize: "0.7rem",
+   411→   411→                        fontWeight: 500,
+   412→   412→                        color: WHITE60,
+   413→   413→                        letterSpacing: "0.03em",
+   414→   414→                      }}
+   415→   415→                      onMouseEnter={(e) => {
+   416→   416→                        (e.currentTarget as HTMLElement).style.color = WHITE;
+   417→   417→                      }}
+   418→   418→                      onMouseLeave={(e) => {
+   419→   419→                        (e.currentTarget as HTMLElement).style.color = WHITE60;
+   420→   420→                      }}
+   421→   421→                    >
+   422→   422→                      <Image
+   423→   423→                        src={session.user?.image || "/logo.png"}
+   424→   424→                        alt={session.user?.name || "Avatar"}
+   425→   425→                        width={32}
+   426→   426→                        height={32}
+   427→   427→                        className="rounded-full object-cover"
+   428→   428→                        style={{ border: "1px solid rgba(255,255,255,0.1)" }}
+   429→   429→                        onError={(e) => { (e.target as HTMLImageElement).src = "/logo.png"; }}
+   430→   430→                      />
+   431→   431→                      <span className="max-w-[100px] truncate">{session.user?.name}</span>
+   432→   432→                    </button>
+   433→   433→                  );
+   434→   434→                }
+   435→   435→
+   436→   436→                return (
+   437→   437→                  <button
+   438→   438→                    key="login-btn"
+   439→   439→                    onClick={() => signIn("discord")}
+   440→   440→                    className="flex items-center gap-2 px-4 py-2 transition-all duration-200 cursor-pointer"
+   441→   441→                    style={{
+   442→   442→                      fontFamily: "'Inter', sans-serif",
+   443→   443→                      fontSize: "0.72rem",
+   444→   444→                      fontWeight: 600,
+   445→   445→                      letterSpacing: "0.06em",
+   446→   446→                      color: WHITE,
+   447→   447→                      background: "#5865F2",
+   448→   448→                      borderRadius: 6,
+   449→   449→                      padding: "8px 18px",
+   450→   450→                    }}
+   451→   451→                    onMouseEnter={(e) => {
+   452→   452→                      const el = e.currentTarget as HTMLElement;
+   453→   453→                      el.style.background = "#4752C4";
+   454→   454→                    }}
+   455→   455→                    onMouseLeave={(e) => {
+   456→   456→                      const el = e.currentTarget as HTMLElement;
+   457→   457→                      el.style.background = "#5865F2";
+   458→   458→                    }}
+   459→   459→                  >
+   460→   460→                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+   461→   461→                      <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189z" />
+   462→   462→                    </svg>
+   463→   463→                    SE CONNECTER
+   464→   464→                  </button>
+   465→   465→                );
+   466→   466→              }
+   467→   467→
+   468→   468→              const hasChildren = group.children && group.children.length > 0;
+   469→   469→              const isActive = group.page === currentPage;
+   470→   470→              const active = isGroupActive(group);
+   471→   471→              const isOpen = openMenu === group.label;
+   472→   472→              const sectionColor = getSectionColor(group.label);
+   473→   473→              const textColor = getNavColor(group.label, active, isOpen);
+   474→   474→
+   475→   475→              if (!hasChildren) {
+   476→   476→                return (
+   477→   477→                  <button
+   478→   478→                    key={group.label}
+   479→   479→                    onClick={() => handleNav(group.page!)}
+   480→   480→                    className="relative px-4 py-2 transition-all duration-200"
+   481→   481→                    style={{
+   482→   482→                      fontFamily: "'Inter', sans-serif",
+   483→   483→                      fontSize: "0.75rem",
+   484→   484→                      fontWeight: isActive || hoveredItem === group.label ? 600 : 400,
+   485→   485→                      letterSpacing: "0.08em",
+   486→   486→                      color: textColor,
+   487→   487→                    }}
+   488→   488→                    onMouseEnter={() => setHoveredItem(group.label)}
+   489→   489→                    onMouseLeave={() => setHoveredItem(null)}
+   490→   490→                  >
+   491→   491→                    {group.label}
+   492→   492→                    {(isActive || hoveredItem === group.label) && (
+   493→   493→                      <span
+   494→   494→                        className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] rounded-full"
+   495→   495→                        style={{
+   496→   496→                          width: "60%",
+   497→   497→                          background: sectionColor,
+   498→   498→                          transition: "background 0.2s ease",
+   499→   499→                        }}
+   500→   500→                      />
+   501→   501→                    )}
+   502→   502→                  </button>
+   503→   503→                );
+   504→   504→              }
+   505→   505→
+   506→   506→              return (
+   507→   507→                <div
+   508→   508→                  key={group.label}
+   509→   509→                  className="relative"
+   510→   510→                  onMouseEnter={() => handleMouseEnter(group.label)}
+   511→   511→                  onMouseLeave={handleMouseLeave}
+   512→   512→                >
+   513→   513→                  <button
+   514→   514→                    className="flex items-center gap-1.5 px-4 py-2 relative transition-all duration-200"
+   515→   515→                    style={{
+   516→   516→                      fontFamily: "'Inter', sans-serif",
+   517→   517→                      fontSize: "0.75rem",
+   518→   518→                      fontWeight: active || isOpen || hoveredItem === group.label ? 600 : 400,
+   519→   519→                      letterSpacing: "0.08em",
+   520→   520→                      color: textColor,
+   521→   521→                    }}
+   522→   522→                    onMouseEnter={() => setHoveredItem(group.label)}
+   523→   523→                    onMouseLeave={() => {
+   524→   524→                      if (openMenu !== group.label) setHoveredItem(null);
+   525→   525→                    }}
+   526→   526→                  >
+   527→   527→                    {group.label}
+   528→   528→                    <ChevronDown
+   529→   529→                      size={11}
+   530→   530→                      className="transition-transform duration-200"
+   531→   531→                      style={{
+   532→   532→                        opacity: 0.5,
+   533→   533→                        transform: isOpen ? "rotate(180deg)" : "none",
+   534→   534→                        color: textColor,
+   535→   535→                      }}
+   536→   536→                    />
+   537→   537→                    {(active || hoveredItem === group.label) && (
+   538→   538→                      <span
+   539→   539→                        className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] rounded-full"
+   540→   540→                        style={{
+   541→   541→                          width: "60%",
+   542→   542→                          background: sectionColor,
+   543→   543→                          transition: "background 0.2s ease",
+   544→   544→                        }}
+   545→   545→                      />
+   546→   546→                    )}
+   547→   547→                  </button>
+   548→   548→                  <NavDropdown
+   549→   549→                    group={group}
+   550→   550→                    isOpen={isOpen}
+   551→   551→                    onNavigate={handleNav}
+   552→   552→                    onClose={() => setOpenMenu(null)}
+   553→   553→                    accentColor={sectionColor}
+   554→   554→                    bannerImage={DROPDOWN_BANNERS[group.label]}
+   555→   555→                  />
+   556→   556→                </div>
+   557→   557→              );
+   558→   558→            })}
+   559→   559→          </nav>
+   560→   560→
+   561→   561→          {/* Right Actions: Admin buttons only */}
+   562→   562→          <div className="flex items-center gap-1">
+   563→   563→            {isAdmin && (
+   564→   564→              <>
+   565→   565→                <button
+   566→   566→                  onClick={toggleEditMode}
+   567→   567→                  className={`p-2 rounded transition-all duration-200 ${
+   568→   568→                    isEditMode ? "text-amber-400 bg-amber-400/10" : ""
+   569→   569→                  }`}
+   570→   570→                  style={isEditMode ? undefined : { color: WHITE60 }}
+   571→   571→                  onMouseEnter={(e) => { if (!isEditMode) { (e.currentTarget as HTMLElement).style.color = WHITE; (e.currentTarget as HTMLElement).style.background = WHITE04; }}}
+   572→   572→                  onMouseLeave={(e) => { if (!isEditMode) { (e.currentTarget as HTMLElement).style.color = WHITE60; (e.currentTarget as HTMLElement).style.background = "transparent"; }}}
+   573→   573→                  aria-label="Mode Édition CMS"
+   574→   574→                  title={isEditMode ? "Quitter le mode édition" : "Mode édition (CMS)"}
+   575→   575→                >
+   576→   576→                  <Pencil size={15} strokeWidth={1.8} />
+   577→   577→                </button>
+   578→   578→                <button
+   579→   579→                  onClick={() => handleNav("admin")}
+   580→   580→                  className="p-2 rounded transition-colors duration-200"
+   581→   581→                  style={{ color: currentPage === "admin" ? "#E8A735" : WHITE60 }}
+   582→   582→                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = WHITE; (e.currentTarget as HTMLElement).style.background = WHITE04; }}
+   583→   583→                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = WHITE60; (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+   584→   584→                  aria-label="Administration"
+   585→   585→                >
+   586→   586→                  <Settings size={15} strokeWidth={1.8} />
+   587→   587→                </button>
+   588→   588→              </>
+   589→   589→            )}
+   590→   590→
+   591→   591→            {session && (
+   592→   592→              <button
+   593→   593→                onClick={() => signOut({ callbackUrl: "/" })}
+   594→   594→                className="p-2 rounded transition-colors duration-200"
+   595→   595→                style={{ color: WHITE60 }}
+   596→   596→                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#F43F5E"; (e.currentTarget as HTMLElement).style.background = "rgba(244,63,94,0.06)"; }}
+   597→   597→                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = WHITE60; (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+   598→   598→                aria-label="Se déconnecter"
+   599→   599→                title="Se déconnecter"
+   600→   600→              >
+   601→   601→                <LogOut size={15} strokeWidth={1.8} />
+   602→   602→              </button>
+   603→   603→            )}
+   604→   604→
+   605→   605→            <button
+   606→   606→              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+   607→   607→              className="lg:hidden p-2 rounded transition-colors duration-200"
+   608→   608→              style={{ color: WHITE60 }}
+   609→   609→              aria-label="Menu"
+   610→   610→            >
+   611→   611→              {mobileMenuOpen ? (
+   612→   612→                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
+   613→   613→              ) : (
+   614→   614→                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+   615→   615→              )}
+   616→   616→            </button>
+   617→   617→          </div>
+   618→   618→        </div>
+   619→   619→      </header>
+   620→   620→
+   621→   621→      {/* ─── MOBILE OVERLAY ─── */}
+   622→   622→      <div
+   623→   623→        className={`fixed inset-0 z-[110] flex flex-col transition-all duration-300 lg:hidden ${
+   624→   624→          mobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+   625→   625→        }`}
+   626→   626→        style={{ background: "rgba(5,5,8,0.97)" }}
+   627→   627→      >
+   628→   628→        <div className="flex items-center justify-between px-5" style={{ height: 60 }}>
+   629→   629→          <div className="flex items-center gap-3">
+   630→   630→            <Image src="/logo.png" alt="Ascension" width={90} height={26} className="h-6 w-auto object-contain select-none" />
+   631→   631→            <MusicBars />
+   632→   632→          </div>
+   633→   633→          <button onClick={() => setMobileMenuOpen(false)} style={{ color: WHITE60 }} aria-label="Fermer">
+   634→   634→            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
+   635→   635→          </button>
+   636→   636→        </div>
+   637→   637→        <div className="flex-1 flex flex-col items-center justify-center gap-1 px-6">
+   638→   638→          {NAV_GROUPS.map((group) => {
+   639→   639→            if (group.isLogin) {
+   640→   640→              if (session) {
+   641→   641→                return (
+   642→   642→                  <div key="mobile-avatar" className="w-full max-w-xs text-center py-3">
+   643→   643→                    <button
+   644→   644→                      onClick={() => { handleNav("profile"); setMobileMenuOpen(false); }}
+   645→   645→                      className="flex items-center justify-center gap-2 w-full"
+   646→   646→                      style={{
+   647→   647→                        fontFamily: "'Inter', sans-serif",
+   648→   648→                        fontSize: "0.85rem",
+   649→   649→                        fontWeight: 400,
+   650→   650→                        letterSpacing: "0.05em",
+   651→   651→                        color: WHITE60,
+   652→   652→                      }}
+   653→   653→                    >
+   654→   654→                      <Image
+   655→   655→                        src={session.user?.image || "/logo.png"}
+   656→   656→                        alt={session.user?.name || "Avatar"}
+   657→   657→                        width={28}
+   658→   658→                        height={28}
+   659→   659→                        className="rounded-full object-cover"
+   660→   660→                        style={{ border: "1px solid rgba(255,255,255,0.1)" }}
+   661→   661→                        onError={(e) => { (e.target as HTMLImageElement).src = "/logo.png"; }}
+   662→   662→                      />
+   663→   663→                      <span className="truncate">{session.user?.name}</span>
+   664→   664→                    </button>
+   665→   665→                  </div>
+   666→   666→                );
+   667→   667→              }
+   668→   668→              return (
+   669→   669→                <div key="mobile-login" className="w-full max-w-xs text-center py-3">
+   670→   670→                  <button
+   671→   671→                    onClick={() => { signIn("discord"); setMobileMenuOpen(false); }}
+   672→   672→                    className="flex items-center justify-center gap-2 w-full mx-auto"
+   673→   673→                    style={{
+   674→   674→                      fontFamily: "'Inter', sans-serif",
+   675→   675→                      fontSize: "0.78rem",
+   676→   676→                      fontWeight: 600,
+   677→   677→                      letterSpacing: "0.06em",
+   678→   678→                      color: WHITE,
+   679→   679→                      background: "#5865F2",
+   680→   680→                      borderRadius: 6,
+   681→   681→                      padding: "10px 24px",
+   682→   682→                    }}
+   683→   683→                  >
+   684→   684→                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+   685→   685→                      <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189z" />
+   686→   686→                    </svg>
+   687→   687→                    SE CONNECTER
+   688→   688→                  </button>
+   689→   689→                </div>
+   690→   690→              );
+   691→   691→            }
+   692→   692→
+   693→   693→            const hasChildren = group.children && group.children.length > 0;
+   694→   694→            const isActive = group.page === currentPage;
+   695→   695→            const active = isGroupActive(group);
+   696→   696→            const isOpen = mobileDropdown === group.label;
+   697→   697→            const sectionColor = getSectionColor(group.label);
+   698→   698→
+   699→   699→            return (
+   700→   700→              <div key={group.label} className="w-full max-w-xs text-center">
+   701→   701→                <button
+   702→   702→                  onClick={() => {
+   703→   703→                    if (!hasChildren) { handleNav(group.page!); }
+   704→   704→                    else { setMobileDropdown(isOpen ? null : group.label); }
+   705→   705→                  }}
+   706→   706→                  className="w-full py-3 transition-all duration-200"
+   707→   707→                  style={{
+   708→   708→                    fontFamily: "'Inter', sans-serif",
+   709→   709→                    fontSize: "0.85rem",
+   710→   710→                    fontWeight: (isActive || active) ? 600 : 400,
+   711→   711→                    letterSpacing: "0.12em",
+   712→   712→                    color: (isActive || active) ? sectionColor : WHITE60,
+   713→   713→                    borderBottom: (isActive || active) ? `1px solid ${sectionColor}` : "1px solid transparent",
+   714→   714→                  }}
+   715→   715→                >
+   716→   716→                  {group.label}
+   717→   717→                  {hasChildren && (
+   718→   718→                    <ChevronDown
+   719→   719→                      size={13}
+   720→   720→                      className="opacity-40 ml-1 inline-block transition-transform duration-300"
+   721→   721→                      style={{ transform: isOpen ? "rotate(180deg)" : "none" }}
+   722→   722→                    />
+   723→   723→                  )}
+   724→   724→                </button>
+   725→   725→                {hasChildren && isOpen && (
+   726→   726→                  <div className="py-1">
+   727→   727→                    {group.children!.map((child) => (
+   728→   728→                      <button
+   729→   729→                        key={child.page}
+   730→   730→                        onClick={() => handleNav(child.page)}
+   731→   731→                        className="block w-full py-2.5 transition-colors duration-150"
+   732→   732→                        style={{
+   733→   733→                          fontFamily: "'Inter', sans-serif",
+   734→   734→                          fontSize: "0.75rem",
+   735→   735→                          fontWeight: 300,
+   736→   736→                          color: WHITE60,
+   737→   737→                          letterSpacing: "0.05em",
+   738→   738→                        }}
+   739→   739→                        onMouseEnter={(e) => {
+   740→   740→                          (e.currentTarget as HTMLElement).style.color = sectionColor;
+   741→   741→                        }}
+   742→   742→                        onMouseLeave={(e) => {
+   743→   743→                          (e.currentTarget as HTMLElement).style.color = WHITE60;
+   744→   744→                        }}
+   745→   745→                      >
+   746→   746→                        {child.label}
+   747→   747→                      </button>
+   748→   748→                    ))}
+   749→   749→                  </div>
+   750→   750→                )}
+   751→   751→              </div>
+   752→   752→            );
+   753→   753→          })}
+   754→   754→        </div>
+   755→   755→        <div className="flex items-center justify-center gap-4 pb-10">
+   756→   756→          {session && (
+   757→   757→            <button
+   758→   758→              onClick={() => { signOut({ callbackUrl: "/" }); setMobileMenuOpen(false); }}
+   759→   759→              className="p-2.5 transition-colors duration-200"
+   760→   760→              style={{ color: WHITE60 }}
+   761→   761→              aria-label="Se déconnecter"
+   762→   762→            >
+   763→   763→              <LogOut size={16} />
+   764→   764→            </button>
+   765→   765→          )}
+   766→   766→        </div>
+   767→   767→      </div>
+   768→   768→    </>
+   769→   769→  );
+   770→   770→}

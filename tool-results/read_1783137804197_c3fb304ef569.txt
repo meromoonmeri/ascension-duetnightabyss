@@ -1,0 +1,966 @@
+     1→     1→"use client";
+     2→     2→
+     3→     3→import Image from "next/image";
+     4→     4→import { useEffect, useRef, useState, useCallback } from "react";
+     5→     5→import { useNavigation, type PageType } from "@/store/navigationStore";
+     6→     6→import { useSession, signIn } from "next-auth/react";
+     7→     7→import {
+     8→     8→  ChevronRight, ChevronDown,
+     9→     9→} from "lucide-react";
+    10→    10→import gsap from "gsap";
+    11→    11→
+    12→    12→/* ═══════════════════════════════════════════════════════════════════
+    13→    13→   HOOVERSESE-STYLE HOMEPAGE — Cinematic Full-Viewport
+    14→    14→   Inspired by Honkai Impact 3rd / Genshin Impact official sites
+    15→    15→   ═══════════════════════════════════════════════════════════════ */
+    16→    16→
+    17→    17→/* ─── Design Tokens ──────────────────────────────────────────── */
+    18→    18→const T = {
+    19→    19→  white: "#FFFFFF",
+    20→    20→  white60: "rgba(255,255,255,0.6)",
+    21→    21→  white50: "rgba(255,255,255,0.5)",
+    22→    22→  white35: "rgba(255,255,255,0.35)",
+    23→    23→  white15: "rgba(255,255,255,0.15)",
+    24→    24→  white08: "rgba(255,255,255,0.08)",
+    25→    25→  white04: "rgba(255,255,255,0.04)",
+    26→    26→  black80: "rgba(0,0,0,0.8)",
+    27→    27→  black90: "rgba(0,0,0,0.9)",
+    28→    28→  navH: 60,
+    29→    29→};
+    30→    30→
+    31→    31→/* ─── Section Colors ─────────────────────────────────────────── */
+    32→    32→const SECTION_COLORS: Record<string, string> = {
+    33→    33→  HOME: "#E8A735",
+    34→    34→  "LE MONDE": "#8B5CF6",
+    35→    35→  EXPLORER: "#4ECDC4",
+    36→    36→  COMMUNAUTÉ: "#FF6B6B",
+    37→    37→  "LOG IN": "#5865F2",
+    38→    38→};
+    39→    39→
+    40→    40→/* ─── Navigation Items ──────────────────────────────────────── */
+    41→    41→interface NavDef {
+    42→    42→  label: string;
+    43→    43→  page?: PageType;
+    44→    44→  children?: { label: string; page: PageType; image?: string }[];
+    45→    45→  isLogin?: boolean;
+    46→    46→}
+    47→    47→
+    48→    48→const NAV: NavDef[] = [
+    49→    49→  { label: "HOME", page: "home" },
+    50→    50→  {
+    51→    51→    label: "LE MONDE",
+    52→    52→    children: [
+    53→    53→      { label: "Cosmologie", page: "cosmology" },
+    54→    54→      { label: "Géographie", page: "geography" },
+    55→    55→      { label: "Royaumes", page: "royaumes" },
+    56→    56→      { label: "Système d'Énergie", page: "grimoire" },
+    57→    57→    ],
+    58→    58→  },
+    59→    59→  {
+    60→    60→    label: "EXPLORER",
+    61→    61→    children: [
+    62→    62→      { label: "Races", page: "races" },
+    63→    63→      { label: "Arts", page: "arts" },
+    64→    64→      { label: "Bestiaire", page: "bestiary" },
+    65→    65→      { label: "Artefacts", page: "artefacts" },
+    66→    66→      { label: "Factions", page: "factions" },
+    67→    67→      { label: "Arbres de Compétences", page: "skilltree" },
+    68→    68→    ],
+    69→    69→  },
+    70→    70→  {
+    71→    71→    label: "COMMUNAUTÉ",
+    72→    72→    children: [
+    73→    73→      { label: "News", page: "news" },
+    74→    74→      { label: "Événements", page: "events" },
+    75→    75→      { label: "Banque", page: "bank" },
+    76→    76→      { label: "Boutique", page: "shop" },
+    77→    77→    ],
+    78→    78→  },
+    79→    79→  { label: "LOG IN", isLogin: true },
+    80→    80→];
+    81→    81→
+    82→    82→/* ─── Particle System ───────────────────────────────────────── */
+    83→    83→const PARTICLES = Array.from({ length: 40 }, (_, i) => ({
+    84→    84→  id: i,
+    85→    85→  x: (i * 37 + 13) % 100,
+    86→    86→  size: (i % 3) * 0.8 + 0.6,
+    87→    87→  duration: 8 + (i % 7) * 2,
+    88→    88→  delay: (i * 1.7) % 12,
+    89→    89→  opacity: 0.08 + (i % 4) * 0.04,
+    90→    90→  drift: ((i % 3) - 1) * 20,
+    91→    91→}));
+    92→    92→
+    93→    93→/* ═══════════════════════════════════════════════════════════════
+    94→    94→   SUB-COMPONENTS
+    95→    95→   ═══════════════════════════════════════════════════════════════ */
+    96→    96→
+    97→    97→/* ─── Music Bars Animation Component ─── */
+    98→    98→function MusicBars() {
+    99→    99→  const [playing, setPlaying] = useState(false);
+   100→   100→
+   101→   101→  return (
+   102→   102→    <>
+   103→   103→      <button
+   104→   104→        onClick={() => setPlaying(!playing)}
+   105→   105→        className="flex items-end gap-[2px] shrink-0 cursor-pointer"
+   106→   106→        style={{ height: 16, padding: "0 4px" }}
+   107→   107→        aria-label={playing ? "Pause musique" : "Lire musique"}
+   108→   108→      >
+   109→   109→        <style>{`
+   110→   110→          @keyframes musicBar1 { 0%,100% { height: 4px; } 50% { height: 14px; } }
+   111→   111→          @keyframes musicBar2 { 0%,100% { height: 10px; } 50% { height: 4px; } }
+   112→   112→          @keyframes musicBar3 { 0%,100% { height: 6px; } 50% { height: 12px; } }
+   113→   113→        `}</style>
+   114→   114→        <div
+   115→   115→          className="rounded-full"
+   116→   116→          style={{
+   117→   117→            width: 2,
+   118→   118→            height: 4,
+   119→   119→            background: playing ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.3)",
+   120→   120→            animation: playing ? "musicBar1 0.8s ease-in-out infinite" : "none",
+   121→   121→            transition: "background 0.2s ease",
+   122→   122→          }}
+   123→   123→        />
+   124→   124→        <div
+   125→   125→          className="rounded-full"
+   126→   126→          style={{
+   127→   127→            width: 2,
+   128→   128→            height: 10,
+   129→   129→            background: playing ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.3)",
+   130→   130→            animation: playing ? "musicBar2 0.8s ease-in-out infinite" : "none",
+   131→   131→            animationDelay: "0.15s",
+   132→   132→            transition: "background 0.2s ease",
+   133→   133→          }}
+   134→   134→        />
+   135→   135→        <div
+   136→   136→          className="rounded-full"
+   137→   137→          style={{
+   138→   138→            width: 2,
+   139→   139→            height: 6,
+   140→   140→            background: playing ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.3)",
+   141→   141→            animation: playing ? "musicBar3 0.8s ease-in-out infinite" : "none",
+   142→   142→            animationDelay: "0.3s",
+   143→   143→            transition: "background 0.2s ease",
+   144→   144→          }}
+   145→   145→        />
+   146→   146→      </button>
+   147→   147→      {playing && (
+   148→   148→        <iframe
+   149→   149→          src="https://www.youtube.com/embed/Y2B6dARUEqo?autoplay=1&loop=1&playlist=RDY2B6dARUEqo&controls=0&showinfo=0&rel=0&enablejsapi=1"
+   150→   150→          allow="autoplay; encrypted-media"
+   151→   151→          style={{
+   152→   152→            position: 'fixed',
+   153→   153→            bottom: -100,
+   154→   154→            right: -100,
+   155→   155→            width: 1,
+   156→   156→            height: 1,
+   157→   157→            pointerEvents: 'none',
+   158→   158→            opacity: 0,
+   159→   159→          }}
+   160→   160→          title="Background Music"
+   161→   161→        />
+   162→   162→      )}
+   163→   163→    </>
+   164→   164→  );
+   165→   165→}
+   166→   166→
+   167→   167→/* ─── Banner image per nav group ─── */
+   168→   168→const DROPDOWN_BANNERS: Record<string, string> = {
+   169→   169→  "LE MONDE": "/dropdown-monde.jpg",
+   170→   170→  EXPLORER: "/dropdown-explorer.jpg",
+   171→   171→  COMMUNAUTÉ: "/dropdown-communaute.jpg",
+   172→   172→};
+   173→   173→
+   174→   174→/* ─── Top Navigation Bar ─── */
+   175→   175→function TopNav() {
+   176→   176→  const { currentPage, navigate } = useNavigation();
+   177→   177→  const { data: session } = useSession();
+   178→   178→  const [openMenu, setOpenMenu] = useState<string | null>(null);
+   179→   179→  const [mobileOpen, setMobileOpen] = useState(false);
+   180→   180→  const [mobileDropdown, setMobileDropdown] = useState<string | null>(null);
+   181→   181→  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+   182→   182→  const closeTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
+   183→   183→
+   184→   184→  const handleNav = useCallback((page: PageType) => {
+   185→   185→    navigate(page);
+   186→   186→    setOpenMenu(null);
+   187→   187→    setMobileOpen(false);
+   188→   188→  }, [navigate]);
+   189→   189→
+   190→   190→  const getNavColor = (label: string, isActive: boolean, isOpen: boolean) => {
+   191→   191→    const color = SECTION_COLORS[label] || T.white60;
+   192→   192→    if (isActive || isOpen) return color;
+   193→   193→    if (hoveredItem === label) return color;
+   194→   194→    return T.white60;
+   195→   195→  };
+   196→   196→
+   197→   197→  return (
+   198→   198→    <>
+   199→   199→      {/* Desktop Nav */}
+   200→   200→      <nav
+   201→   201→        className="hoyo-nav fixed top-0 left-0 right-0 z-50 hidden lg:flex items-center justify-between px-8 xl:px-12"
+   202→   202→        style={{
+   203→   203→          height: T.navH,
+   204→   204→          background: "rgba(5,5,8,0.92)",
+   205→   205→          backdropFilter: "blur(20px)",
+   206→   206→          WebkitBackdropFilter: "blur(20px)",
+   207→   207→          borderBottom: "1px solid rgba(255,255,255,0.04)",
+   208→   208→        }}
+   209→   209→      >
+   210→   210→        {/* Logo + Music Bars */}
+   211→   211→        <div className="flex items-center gap-3 shrink-0">
+   212→   212→          <button
+   213→   213→            onClick={() => handleNav("home")}
+   214→   214→            className="shrink-0 group"
+   215→   215→            aria-label="Accueil"
+   216→   216→          >
+   217→   217→            <Image
+   218→   218→              src="/logo.png"
+   219→   219→              alt="ASCENSION"
+   220→   220→              width={120}
+   221→   221→              height={32}
+   222→   222→              className="h-7 w-auto object-contain select-none transition-all duration-300 group-hover:brightness-110"
+   223→   223→              priority
+   224→   224→            />
+   225→   225→          </button>
+   226→   226→          <MusicBars />
+   227→   227→        </div>
+   228→   228→
+   229→   229→        {/* Center Nav Items */}
+   230→   230→        <div className="flex items-center gap-0.5">
+   231→   231→          {NAV.map((item) => {
+   232→   232→            if (item.isLogin) {
+   233→   233→              /* ─── LOG IN / AVATAR BUTTON ─── */
+   234→   234→              if (session) {
+   235→   235→                return (
+   236→   236→                  <button
+   237→   237→                    key="logged-in-avatar"
+   238→   238→                    onClick={() => handleNav("profile")}
+   239→   239→                    className="flex items-center gap-2 px-3 py-1.5 transition-all duration-200"
+   240→   240→                    style={{
+   241→   241→                      fontFamily: "'Inter', sans-serif",
+   242→   242→                      fontSize: "0.7rem",
+   243→   243→                      fontWeight: 500,
+   244→   244→                      color: T.white60,
+   245→   245→                      letterSpacing: "0.03em",
+   246→   246→                    }}
+   247→   247→                    onMouseEnter={(e) => {
+   248→   248→                      (e.currentTarget as HTMLElement).style.color = T.white;
+   249→   249→                    }}
+   250→   250→                    onMouseLeave={(e) => {
+   251→   251→                      (e.currentTarget as HTMLElement).style.color = T.white60;
+   252→   252→                    }}
+   253→   253→                  >
+   254→   254→                    <Image
+   255→   255→                      src={session.user?.image || "/logo.png"}
+   256→   256→                      alt={session.user?.name || "Avatar"}
+   257→   257→                      width={32}
+   258→   258→                      height={32}
+   259→   259→                      className="rounded-full object-cover"
+   260→   260→                      style={{ border: "1px solid rgba(255,255,255,0.1)" }}
+   261→   261→                      onError={(e) => { (e.target as HTMLImageElement).src = "/logo.png"; }}
+   262→   262→                    />
+   263→   263→                    <span className="max-w-[100px] truncate">{session.user?.name}</span>
+   264→   264→                  </button>
+   265→   265→                );
+   266→   266→              }
+   267→   267→
+   268→   268→              return (
+   269→   269→                <button
+   270→   270→                  key="login-btn"
+   271→   271→                  onClick={() => signIn("discord")}
+   272→   272→                  className="flex items-center gap-2 transition-all duration-200 cursor-pointer"
+   273→   273→                  style={{
+   274→   274→                    fontFamily: "'Inter', sans-serif",
+   275→   275→                    fontSize: "0.72rem",
+   276→   276→                    fontWeight: 600,
+   277→   277→                    letterSpacing: "0.06em",
+   278→   278→                    color: T.white,
+   279→   279→                    background: "#5865F2",
+   280→   280→                    borderRadius: 6,
+   281→   281→                    padding: "8px 18px",
+   282→   282→                  }}
+   283→   283→                  onMouseEnter={(e) => {
+   284→   284→                    (e.currentTarget as HTMLElement).style.background = "#4752C4";
+   285→   285→                  }}
+   286→   286→                  onMouseLeave={(e) => {
+   287→   287→                    (e.currentTarget as HTMLElement).style.background = "#5865F2";
+   288→   288→                  }}
+   289→   289→                >
+   290→   290→                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+   291→   291→                    <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189z" />
+   292→   292→                  </svg>
+   293→   293→                  SE CONNECTER
+   294→   294→                </button>
+   295→   295→              );
+   296→   296→            }
+   297→   297→
+   298→   298→            const hasChildren = !!item.children;
+   299→   299→            const isActive = item.page === currentPage;
+   300→   300→            const isOpen = openMenu === item.label;
+   301→   301→            const sectionColor = SECTION_COLORS[item.label] || T.white;
+   302→   302→            const textColor = getNavColor(item.label, isActive, isOpen);
+   303→   303→
+   304→   304→            if (!hasChildren) {
+   305→   305→              return (
+   306→   306→                <button
+   307→   307→                  key={item.label}
+   308→   308→                  onClick={() => handleNav(item.page!)}
+   309→   309→                  className="relative px-4 py-2 transition-all duration-200"
+   310→   310→                  style={{
+   311→   311→                    fontFamily: "'Inter', sans-serif",
+   312→   312→                    fontSize: "0.75rem",
+   313→   313→                    fontWeight: isActive || hoveredItem === item.label ? 600 : 400,
+   314→   314→                    letterSpacing: "0.08em",
+   315→   315→                    color: textColor,
+   316→   316→                  }}
+   317→   317→                  onMouseEnter={() => setHoveredItem(item.label)}
+   318→   318→                  onMouseLeave={() => setHoveredItem(null)}
+   319→   319→                >
+   320→   320→                  {item.label}
+   321→   321→                  {(isActive || hoveredItem === item.label) && (
+   322→   322→                    <span
+   323→   323→                      className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] rounded-full"
+   324→   324→                      style={{
+   325→   325→                        width: "60%",
+   326→   326→                        background: sectionColor,
+   327→   327→                        transition: "background 0.2s ease",
+   328→   328→                      }}
+   329→   329→                    />
+   330→   330→                  )}
+   331→   331→                </button>
+   332→   332→              );
+   333→   333→            }
+   334→   334→
+   335→   335→            return (
+   336→   336→              <div
+   337→   337→                key={item.label}
+   338→   338→                className="relative"
+   339→   339→                onMouseEnter={() => {
+   340→   340→                  clearTimeout(closeTimeout.current);
+   341→   341→                  setOpenMenu(item.label);
+   342→   342→                  setHoveredItem(item.label);
+   343→   343→                }}
+   344→   344→                onMouseLeave={() => {
+   345→   345→                  closeTimeout.current = setTimeout(() => {
+   346→   346→                    setOpenMenu(null);
+   347→   347→                    setHoveredItem(null);
+   348→   348→                  }, 250);
+   349→   349→                }}
+   350→   350→              >
+   351→   351→                <button
+   352→   352→                  className="flex items-center gap-1.5 px-4 py-2 relative transition-all duration-200"
+   353→   353→                  style={{
+   354→   354→                    fontFamily: "'Inter', sans-serif",
+   355→   355→                    fontSize: "0.75rem",
+   356→   356→                    fontWeight: isOpen || hoveredItem === item.label ? 600 : 400,
+   357→   357→                    letterSpacing: "0.08em",
+   358→   358→                    color: textColor,
+   359→   359→                  }}
+   360→   360→                  onMouseEnter={() => setHoveredItem(item.label)}
+   361→   361→                  onMouseLeave={() => {
+   362→   362→                    if (openMenu !== item.label) setHoveredItem(null);
+   363→   363→                  }}
+   364→   364→                >
+   365→   365→                  {item.label}
+   366→   366→                  <ChevronDown
+   367→   367→                    size={11}
+   368→   368→                    className="transition-transform duration-200"
+   369→   369→                    style={{
+   370→   370→                      opacity: 0.5,
+   371→   371→                      transform: isOpen ? "rotate(180deg)" : "none",
+   372→   372→                      color: textColor,
+   373→   373→                    }}
+   374→   374→                  />
+   375→   375→                  {(hoveredItem === item.label || isOpen) && (
+   376→   376→                    <span
+   377→   377→                      className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] rounded-full"
+   378→   378→                      style={{
+   379→   379→                        width: "60%",
+   380→   380→                        background: sectionColor,
+   381→   381→                        transition: "background 0.2s ease",
+   382→   382→                      }}
+   383→   383→                    />
+   384→   384→                  )}
+   385→   385→                </button>
+   386→   386→
+   387→   387→                {/* Dropdown */}
+   388→   388→                {isOpen && item.children && (() => {
+   389→   389→                  const bannerImg = DROPDOWN_BANNERS[item.label];
+   390→   390→                  const hasBanner = !!bannerImg;
+   391→   391→                  const cols = item.children.length <= 4 ? item.children.length : 5;
+   392→   392→                  const totalWidth = hasBanner ? Math.max(cols * 130, 380) : 220;
+   393→   393→                  return (
+   394→   394→                    <div
+   395→   395→                      className="hoyo-dropdown absolute top-full left-0 pt-2 z-50"
+   396→   396→                      style={{ minWidth: totalWidth }}
+   397→   397→                    >
+   398→   398→                      <div
+   399→   399→                        style={{
+   400→   400→                          background: "rgba(5,5,8,0.95)",
+   401→   401→                          backdropFilter: "blur(24px)",
+   402→   402→                          border: "1px solid rgba(255,255,255,0.06)",
+   403→   403→                          borderRadius: 8,
+   404→   404→                          overflow: "hidden",
+   405→   405→                          boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+   406→   406→                        }}
+   407→   407→                      >
+   408→   408→                        {/* Banner — desktop only */}
+   409→   409→                        {hasBanner && (
+   410→   410→                          <div className="relative hidden lg:block" style={{ height: 130, width: '100%' }}>
+   411→   411→                            <Image
+   412→   412→                              src={bannerImg}
+   413→   413→                              alt=""
+   414→   414→                              fill
+   415→   415→                              className="object-cover"
+   416→   416→                              sizes={`${totalWidth}px`}
+   417→   417→                              priority={false}
+   418→   418→                            />
+   419→   419→                            <div
+   420→   420→                              className="absolute inset-0"
+   421→   421→                              style={{
+   422→   422→                                background: "linear-gradient(to top, rgba(5,5,8,0.98) 0%, rgba(5,5,8,0.4) 50%, transparent 100%)",
+   423→   423→                              }}
+   424→   424→                            />
+   425→   425→                          </div>
+   426→   426→                        )}
+   427→   427→
+   428→   428→                        {/* Grid of mini cards — desktop */}
+   429→   429→                        {hasBanner ? (
+   430→   430→                          <div
+   431→   431→                            className="hidden lg:grid gap-1.5 p-3"
+   432→   432→                            style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
+   433→   433→                          >
+   434→   434→                            {item.children.map((child) => (
+   435→   435→                              <button
+   436→   436→                                key={child.page}
+   437→   437→                                onClick={() => handleNav(child.page)}
+   438→   438→                                className="flex flex-col items-center justify-center gap-1.5 py-3 px-2 rounded-md transition-all duration-200"
+   439→   439→                                style={{
+   440→   440→                                  background: "rgba(255,255,255,0.02)",
+   441→   441→                                  border: "1px solid rgba(255,255,255,0.04)",
+   442→   442→                                }}
+   443→   443→                                onMouseEnter={(e) => {
+   444→   444→                                  const el = e.currentTarget as HTMLElement;
+   445→   445→                                  el.style.background = "rgba(255,255,255,0.06)";
+   446→   446→                                  el.style.borderColor = sectionColor;
+   447→   447→                                  el.style.boxShadow = `0 0 12px ${sectionColor}22`;
+   448→   448→                                  const label = el.querySelector("span");
+   449→   449→                                  if (label) (label as HTMLElement).style.color = sectionColor;
+   450→   450→                                }}
+   451→   451→                                onMouseLeave={(e) => {
+   452→   452→                                  const el = e.currentTarget as HTMLElement;
+   453→   453→                                  el.style.background = "rgba(255,255,255,0.02)";
+   454→   454→                                  el.style.borderColor = "rgba(255,255,255,0.04)";
+   455→   455→                                  el.style.boxShadow = "none";
+   456→   456→                                  const label = el.querySelector("span");
+   457→   457→                                  if (label) (label as HTMLElement).style.color = T.white60;
+   458→   458→                                }}
+   459→   459→                              >
+   460→   460→                                <ChevronRight
+   461→   461→                                  size={12}
+   462→   462→                                  style={{ color: T.white08, transition: "color 0.2s" }}
+   463→   463→                                />
+   464→   464→                                <span
+   465→   465→                                  style={{
+   466→   466→                                    fontFamily: "'Inter', sans-serif",
+   467→   467→                                    fontSize: "0.65rem",
+   468→   468→                                    fontWeight: 400,
+   469→   469→                                    color: T.white60,
+   470→   470→                                    letterSpacing: "0.04em",
+   471→   471→                                    textAlign: "center",
+   472→   472→                                    lineHeight: 1.3,
+   473→   473→                                    transition: "color 0.2s",
+   474→   474→                                  }}
+   475→   475→                                >
+   476→   476→                                  {child.label}
+   477→   477→                                </span>
+   478→   478→                              </button>
+   479→   479→                            ))}
+   480→   480→                          </div>
+   481→   481→                        ) : (
+   482→   482→                          /* Fallback: simple list (no banner) */
+   483→   483→                          <div style={{ padding: "6px 0" }}>
+   484→   484→                            {item.children.map((child) => (
+   485→   485→                              <button
+   486→   486→                                key={child.page}
+   487→   487→                                onClick={() => handleNav(child.page)}
+   488→   488→                                className="w-full flex items-center justify-between px-5 py-2.5 text-left transition-colors duration-150 group"
+   489→   489→                                style={{
+   490→   490→                                  fontFamily: "'Inter', sans-serif",
+   491→   491→                                  fontSize: "0.72rem",
+   492→   492→                                  fontWeight: 400,
+   493→   493→                                  color: T.white60,
+   494→   494→                                  letterSpacing: "0.03em",
+   495→   495→                                }}
+   496→   496→                                onMouseEnter={(e) => {
+   497→   497→                                  (e.currentTarget as HTMLElement).style.color = sectionColor;
+   498→   498→                                  (e.currentTarget as HTMLElement).style.background = T.white04;
+   499→   499→                                }}
+   500→   500→                                onMouseLeave={(e) => {
+   501→   501→                                  (e.currentTarget as HTMLElement).style.color = T.white60;
+   502→   502→                                  (e.currentTarget as HTMLElement).style.background = "transparent";
+   503→   503→                                }}
+   504→   504→                              >
+   505→   505→                                <span>{child.label}</span>
+   506→   506→                                <ChevronRight
+   507→   507→                                  size={10}
+   508→   508→                                  className="opacity-0 group-hover:opacity-30 transition-opacity"
+   509→   509→                                />
+   510→   510→                              </button>
+   511→   511→                            ))}
+   512→   512→                          </div>
+   513→   513→                        )}
+   514→   514→                      </div>
+   515→   515→                    </div>
+   516→   516→                  );
+   517→   517→                })()}
+   518→   518→              </div>
+   519→   519→            );
+   520→   520→          })}
+   521→   521→        </div>
+   522→   522→
+   523→   523→        {/* Right: spacer for balance */}
+   524→   524→        <div className="w-[120px] shrink-0" />
+   525→   525→      </nav>
+   526→   526→
+   527→   527→      {/* Mobile Nav Overlay */}
+   528→   528→      <div
+   529→   529→        className={`fixed inset-0 z-[110] flex flex-col transition-all duration-300 lg:hidden ${
+   530→   530→          mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+   531→   531→        }`}
+   532→   532→        style={{ background: "rgba(5,5,8,0.97)" }}
+   533→   533→      >
+   534→   534→        <div className="flex items-center justify-between px-5" style={{ height: T.navH }}>
+   535→   535→          <div className="flex items-center gap-3">
+   536→   536→            <Image
+   537→   537→              src="/logo.png"
+   538→   538→              alt="ASCENSION"
+   539→   539→              width={90}
+   540→   540→              height={26}
+   541→   541→              className="h-6 w-auto object-contain select-none"
+   542→   542→            />
+   543→   543→            <MusicBars />
+   544→   544→          </div>
+   545→   545→          <button
+   546→   546→            onClick={() => setMobileOpen(false)}
+   547→   547→            style={{ color: T.white60 }}
+   548→   548→            aria-label="Fermer"
+   549→   549→          >
+   550→   550→            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+   551→   551→              <path d="M18 6L6 18M6 6l12 12" />
+   552→   552→            </svg>
+   553→   553→          </button>
+   554→   554→        </div>
+   555→   555→
+   556→   556→        <div className="flex-1 flex flex-col items-center justify-center gap-1 px-8">
+   557→   557→          {NAV.map((item) => {
+   558→   558→            if (item.isLogin) {
+   559→   559→              if (session) {
+   560→   560→                return (
+   561→   561→                  <div key="mobile-avatar" className="w-full max-w-xs text-center py-3">
+   562→   562→                    <button
+   563→   563→                      onClick={() => { handleNav("profile"); setMobileOpen(false); }}
+   564→   564→                      className="flex items-center justify-center gap-2 w-full"
+   565→   565→                      style={{
+   566→   566→                        fontFamily: "'Inter', sans-serif",
+   567→   567→                        fontSize: "0.85rem",
+   568→   568→                        fontWeight: 400,
+   569→   569→                        letterSpacing: "0.05em",
+   570→   570→                        color: T.white60,
+   571→   571→                      }}
+   572→   572→                    >
+   573→   573→                      <Image
+   574→   574→                        src={session.user?.image || "/logo.png"}
+   575→   575→                        alt={session.user?.name || "Avatar"}
+   576→   576→                        width={28}
+   577→   577→                        height={28}
+   578→   578→                        className="rounded-full object-cover"
+   579→   579→                        style={{ border: "1px solid rgba(255,255,255,0.1)" }}
+   580→   580→                        onError={(e) => { (e.target as HTMLImageElement).src = "/logo.png"; }}
+   581→   581→                      />
+   582→   582→                      <span className="truncate">{session.user?.name}</span>
+   583→   583→                    </button>
+   584→   584→                  </div>
+   585→   585→                );
+   586→   586→              }
+   587→   587→              return (
+   588→   588→                <div key="mobile-login" className="w-full max-w-xs text-center py-3">
+   589→   589→                  <button
+   590→   590→                    onClick={() => { signIn("discord"); setMobileOpen(false); }}
+   591→   591→                    className="flex items-center justify-center gap-2 w-full mx-auto"
+   592→   592→                    style={{
+   593→   593→                      fontFamily: "'Inter', sans-serif",
+   594→   594→                      fontSize: "0.78rem",
+   595→   595→                      fontWeight: 600,
+   596→   596→                      letterSpacing: "0.06em",
+   597→   597→                      color: T.white,
+   598→   598→                      background: "#5865F2",
+   599→   599→                      borderRadius: 6,
+   600→   600→                      padding: "10px 24px",
+   601→   601→                    }}
+   602→   602→                  >
+   603→   603→                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+   604→   604→                      <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189z" />
+   605→   605→                    </svg>
+   606→   606→                    SE CONNECTER
+   607→   607→                  </button>
+   608→   608→                </div>
+   609→   609→              );
+   610→   610→            }
+   611→   611→
+   612→   612→            const hasChildren = !!item.children;
+   613→   613→            const isActive = item.page === currentPage;
+   614→   614→            const sectionColor = SECTION_COLORS[item.label] || T.white;
+   615→   615→            const isOpen = mobileDropdown === item.label;
+   616→   616→
+   617→   617→            return (
+   618→   618→              <div key={item.label} className="w-full max-w-xs text-center">
+   619→   619→                <button
+   620→   620→                  onClick={() => {
+   621→   621→                    if (!hasChildren && item.page) handleNav(item.page);
+   622→   622→                    else if (hasChildren) setMobileDropdown(isOpen ? null : item.label);
+   623→   623→                  }}
+   624→   624→                  className="w-full py-3 transition-all duration-200"
+   625→   625→                  style={{
+   626→   626→                    fontFamily: "'Inter', sans-serif",
+   627→   627→                    fontSize: "0.85rem",
+   628→   628→                    fontWeight: isActive ? 600 : 400,
+   629→   629→                    letterSpacing: "0.12em",
+   630→   630→                    color: isActive ? sectionColor : T.white60,
+   631→   631→                    borderBottom: isActive ? `1px solid ${sectionColor}` : "1px solid transparent",
+   632→   632→                  }}
+   633→   633→                >
+   634→   634→                  {item.label}
+   635→   635→                  {hasChildren && (
+   636→   636→                    <ChevronDown
+   637→   637→                      size={13}
+   638→   638→                      className="opacity-40 ml-1 inline-block transition-transform duration-300"
+   639→   639→                      style={{ transform: isOpen ? "rotate(180deg)" : "none" }}
+   640→   640→                    />
+   641→   641→                  )}
+   642→   642→                </button>
+   643→   643→                {hasChildren && isOpen && (
+   644→   644→                  <div className="py-1">
+   645→   645→                    {item.children!.map((child) => (
+   646→   646→                      <button
+   647→   647→                        key={child.page}
+   648→   648→                        onClick={() => handleNav(child.page)}
+   649→   649→                        className="block w-full py-2 transition-colors duration-150"
+   650→   650→                        style={{
+   651→   651→                          fontFamily: "'Inter', sans-serif",
+   652→   652→                          fontSize: "0.75rem",
+   653→   653→                          fontWeight: 300,
+   654→   654→                          color: T.white35,
+   655→   655→                          letterSpacing: "0.05em",
+   656→   656→                        }}
+   657→   657→                        onMouseEnter={(e) => {
+   658→   658→                          (e.currentTarget as HTMLElement).style.color = sectionColor;
+   659→   659→                        }}
+   660→   660→                        onMouseLeave={(e) => {
+   661→   661→                          (e.currentTarget as HTMLElement).style.color = T.white35;
+   662→   662→                        }}
+   663→   663→                      >
+   664→   664→                        {child.label}
+   665→   665→                      </button>
+   666→   666→                    ))}
+   667→   667→                  </div>
+   668→   668→                )}
+   669→   669→              </div>
+   670→   670→            );
+   671→   671→          })}
+   672→   672→        </div>
+   673→   673→      </div>
+   674→   674→
+   675→   675→      {/* Mobile Hamburger */}
+   676→   676→      <button
+   677→   677→        onClick={() => setMobileOpen(true)}
+   678→   678→        className="lg:hidden fixed top-0 right-0 z-[105] flex items-center justify-center"
+   679→   679→        style={{
+   680→   680→          width: T.navH,
+   681→   681→          height: T.navH,
+   682→   682→          color: T.white60,
+   683→   683→        }}
+   684→   684→        aria-label="Menu"
+   685→   685→      >
+   686→   686→        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+   687→   687→          <path d="M4 6h16M4 12h16M4 18h16" />
+   688→   688→        </svg>
+   689→   689→      </button>
+   690→   690→    </>
+   691→   691→  );
+   692→   692→}
+   693→   693→
+   694→   694→/* ─── Main Hero Section ─── */
+   695→   695→function HeroSection() {
+   696→   696→  const { navigate } = useNavigation();
+   697→   697→  const containerRef = useRef<HTMLVideoElement>(null);
+   698→   698→  const heroRef = useRef<HTMLDivElement>(null);
+   699→   699→  const [videoReady, setVideoReady] = useState(false);
+   700→   700→
+   701→   701→  // Video loop
+   702→   702→  useEffect(() => {
+   703→   703→    const video = containerRef.current;
+   704→   704→    if (!video) return;
+   705→   705→    const onEnded = () => { video.currentTime = 0; video.play().catch(() => {}); };
+   706→   706→    video.addEventListener("ended", onEnded);
+   707→   707→    return () => video.removeEventListener("ended", onEnded);
+   708→   708→  }, [videoReady]);
+   709→   709→
+   710→   710→  // Entrance animation
+   711→   711→  useEffect(() => {
+   712→   712→    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+   713→   713→    if (prefersReduced) return;
+   714→   714→
+   715→   715→    const ctx = gsap.context(() => {
+   716→   716→      const tl = gsap.timeline({ delay: 0.15 });
+   717→   717→
+   718→   718→      tl.fromTo(".hoyo-nav", { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, 0.1);
+   719→   719→      tl.fromTo(".hoyo-hero-content", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" }, 0.3);
+   720→   720→      tl.fromTo(".hoyo-hero-badge", { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.4, ease: "power2.out" }, 0.6);
+   721→   721→      tl.fromTo(".hoyo-hero-buttons", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 0.7);
+   722→   722→      tl.fromTo(".hoyo-footer-bar", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power2.out" }, 0.9);
+   723→   723→    });
+   724→   724→
+   725→   725→    return () => ctx.revert();
+   726→   726→  }, []);
+   727→   727→
+   728→   728→  const DISCORD_URL = "https://discord.gg/svAvDbBx36";
+   729→   729→
+   730→   730→  return (
+   731→   731→    <div ref={heroRef} className="relative w-full h-screen overflow-hidden select-none hoyo-selection">
+   732→   732→      {/* ═══ FULL-BLEED VIDEO BACKGROUND ═══ */}
+   733→   733→      <video
+   734→   734→        ref={containerRef}
+   735→   735→        autoPlay
+   736→   736→        muted
+   737→   737→        playsInline
+   738→   738→        onCanPlay={() => setVideoReady(true)}
+   739→   739→        className="absolute inset-0 w-full h-full object-cover"
+   740→   740→        style={{
+   741→   741→          transform: "scale(1.05)",
+   742→   742→          opacity: videoReady ? 1 : 0,
+   743→   743→          transition: "opacity 1.5s ease",
+   744→   744→          animation: "hoyoSlowZoom 40s ease-in-out infinite alternate",
+   745→   745→        }}
+   746→   746→      >
+   747→   747→        <source src="/hero-bg.mp4" type="video/mp4" />
+   748→   748→      </video>
+   749→   749→
+   750→   750→      {/* ═══ GRADIENT OVERLAYS ═══ */}
+   751→   751→      {/* Top dark fade (for nav readability) */}
+   752→   752→      <div
+   753→   753→        className="absolute inset-x-0 top-0 pointer-events-none z-[2]"
+   754→   754→        style={{ height: 120, background: "linear-gradient(180deg, rgba(0,0,0,0.55) 0%, transparent 100%)" }}
+   755→   755→      />
+   756→   756→      {/* Bottom dark fade (for buttons/footer readability) */}
+   757→   757→      <div
+   758→   758→        className="absolute inset-x-0 bottom-0 pointer-events-none z-[2]"
+   759→   759→        style={{ height: "45%", background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.2) 50%, transparent 100%)" }}
+   760→   760→      />
+   761→   761→      {/* Side vignettes */}
+   762→   762→      <div
+   763→   763→        className="absolute inset-0 pointer-events-none z-[1]"
+   764→   764→        style={{ background: "radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.35) 100%)" }}
+   765→   765→      />
+   766→   766→
+   767→   767→      {/* ═══ PARTICLES ═══ */}
+   768→   768→      <div className="absolute inset-0 overflow-hidden pointer-events-none z-[3]">
+   769→   769→        {PARTICLES.map((p) => (
+   770→   770→          <div
+   771→   771→            key={p.id}
+   772→   772→            className="absolute rounded-full"
+   773→   773→            style={{
+   774→   774→              width: p.size,
+   775→   775→              height: p.size,
+   776→   776→              left: `${p.x}%`,
+   777→   777→              top: -10,
+   778→   778→              background: "rgba(255,255,255,0.8)",
+   779→   779→              opacity: p.opacity,
+   780→   780→              animation: `hoyoDrift ${p.duration}s linear infinite`,
+   781→   781→              animationDelay: `${p.delay}s`,
+   782→   782→            }}
+   783→   783→          />
+   784→   784→        ))}
+   785→   785→      </div>
+   786→   786→
+   787→   787→      {/* ═══ NAVIGATION ═══ */}
+   788→   788→      <TopNav />
+   789→   789→
+   790→   790→      {/* ═══ CENTER HERO CONTENT ═══ */}
+   791→   791→      <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none">
+   792→   792→        <div className="hoyo-hero-content flex flex-col items-center text-center px-4 opacity-0" style={{ marginTop: -20 }}>
+   793→   793→          {/* Logo */}
+   794→   794→          <div className="mb-3">
+   795→   795→            <Image
+   796→   796→              src="/logo.png"
+   797→   797→              alt="ASCENSION"
+   798→   798→              width={320}
+   799→   799→              height={180}
+   800→   800→              priority
+   801→   801→              className="select-none max-w-[280px] sm:max-w-[320px] w-auto"
+   802→   802→              style={{
+   803→   803→                objectFit: "contain",
+   804→   804→                filter: "drop-shadow(0 4px 30px rgba(0,0,0,0.5))",
+   805→   805→              }}
+   806→   806→            />
+   807→   807→          </div>
+   808→   808→
+   809→   809→          {/* Japanese subtitle */}
+   810→   810→          <p
+   811→   811→            className="mb-4"
+   812→   812→            style={{
+   813→   813→              fontFamily: "'Noto Sans JP', sans-serif",
+   814→   814→              fontSize: "clamp(0.7rem, 1.5vw, 1rem)",
+   815→   815→              fontWeight: 300,
+   816→   816→              color: T.white35,
+   817→   817→              letterSpacing: "0.2em",
+   818→   818→            }}
+   819→   819→          >
+   820→   820→            ノミステリ RP
+   821→   821→          </p>
+   822→   822→
+   823→   823→          {/* NOW LIVE badge — transparent, no background/border/glow */}
+   824→   824→          <div
+   825→   825→            className="hoyo-hero-badge inline-flex items-center gap-2 mb-8 opacity-0"
+   826→   826→          >
+   827→   827→            <div
+   828→   828→              className="w-1.5 h-1.5 rounded-full"
+   829→   829→              style={{ background: "#10B981", boxShadow: "0 0 6px #10B981" }}
+   830→   830→            />
+   831→   831→            <span
+   832→   832→              style={{
+   833→   833→                fontFamily: "'Inter', sans-serif",
+   834→   834→                fontSize: "0.55rem",
+   835→   835→                fontWeight: 400,
+   836→   836→                color: "rgba(255,255,255,0.5)",
+   837→   837→                letterSpacing: "0.1em",
+   838→   838→              }}
+   839→   839→            >
+   840→   840→              MAINTENANT EN LIGNE
+   841→   841→            </span>
+   842→   842→          </div>
+   843→   843→
+   844→   844→          {/* CTA Buttons */}
+   845→   845→          <div className="hoyo-hero-buttons flex flex-col sm:flex-row items-center gap-3 opacity-0 pointer-events-auto">
+   846→   846→            <button
+   847→   847→              onClick={() => window.open(DISCORD_URL, "_blank", "noopener,noreferrer")}
+   848→   848→              className="transition-all duration-300 cursor-pointer"
+   849→   849→              style={{
+   850→   850→                padding: "13px 40px",
+   851→   851→                borderRadius: 6,
+   852→   852→                border: "1px solid rgba(255,255,255,0.2)",
+   853→   853→                background: "transparent",
+   854→   854→                color: T.white,
+   855→   855→                fontFamily: "'Inter', sans-serif",
+   856→   856→                fontSize: "0.78rem",
+   857→   857→                fontWeight: 500,
+   858→   858→                letterSpacing: "0.06em",
+   859→   859→              }}
+   860→   860→              onMouseEnter={(e) => {
+   861→   861→                const el = e.currentTarget as HTMLElement;
+   862→   862→                el.style.borderColor = "rgba(255,255,255,0.4)";
+   863→   863→                el.style.filter = "brightness(1.1)";
+   864→   864→              }}
+   865→   865→              onMouseLeave={(e) => {
+   866→   866→                const el = e.currentTarget as HTMLElement;
+   867→   867→                el.style.borderColor = "rgba(255,255,255,0.2)";
+   868→   868→                el.style.filter = "none";
+   869→   869→              }}
+   870→   870→            >
+   871→   871→              REJOINDRE LE SERVEUR
+   872→   872→            </button>
+   873→   873→            <button
+   874→   874→              onClick={() => navigate("cosmology")}
+   875→   875→              className="transition-all duration-300 cursor-pointer"
+   876→   876→              style={{
+   877→   877→                padding: "13px 32px",
+   878→   878→                borderRadius: 6,
+   879→   879→                border: `1px solid ${T.white15}`,
+   880→   880→                background: "transparent",
+   881→   881→                color: T.white60,
+   882→   882→                fontFamily: "'Inter', sans-serif",
+   883→   883→                fontSize: "0.75rem",
+   884→   884→                fontWeight: 500,
+   885→   885→                letterSpacing: "0.06em",
+   886→   886→              }}
+   887→   887→              onMouseEnter={(e) => {
+   888→   888→                const el = e.currentTarget as HTMLElement;
+   889→   889→                el.style.borderColor = T.white35;
+   890→   890→                el.style.color = T.white;
+   891→   891→                el.style.background = T.white04;
+   892→   892→              }}
+   893→   893→              onMouseLeave={(e) => {
+   894→   894→                const el = e.currentTarget as HTMLElement;
+   895→   895→                el.style.borderColor = T.white15;
+   896→   896→                el.style.color = T.white60;
+   897→   897→                el.style.background = "transparent";
+   898→   898→              }}
+   899→   899→            >
+   900→   900→              DÉCOUVRIR L&apos;UNIVERS
+   901→   901→            </button>
+   902→   902→          </div>
+   903→   903→        </div>
+   904→   904→      </div>
+   905→   905→
+   906→   906→      {/* ═══ BOTTOM FOOTER BAR ═══ */}
+   907→   907→      <footer
+   908→   908→        className="hoyo-footer-bar absolute bottom-0 left-0 right-0 z-20 flex items-center justify-between px-6 lg:px-10 opacity-0"
+   909→   909→        style={{
+   910→   910→          paddingBottom: "env(safe-area-inset-bottom, 0px)",
+   911→   911→          height: 44,
+   912→   912→          background: "linear-gradient(to top, rgba(0,0,0,0.3) 0%, transparent 100%)",
+   913→   913→        }}
+   914→   914→      >
+   915→   915→        <div className="flex items-center gap-3">
+   916→   916→          <span
+   917→   917→            style={{
+   918→   918→              fontFamily: "'Inter', sans-serif",
+   919→   919→              fontSize: "0.5rem",
+   920→   920→              color: T.white15,
+   921→   921→              letterSpacing: "0.1em",
+   922→   922→            }}
+   923→   923→          >
+   924→   924→            © 2025 ASCENSION — KAKUSEI
+   925→   925→          </span>
+   926→   926→        </div>
+   927→   927→        <div className="flex items-center gap-4">
+   928→   928→          <span
+   929→   929→            style={{
+   930→   930→              fontFamily: "'Inter', sans-serif",
+   931→   931→              fontSize: "0.45rem",
+   932→   932→              color: T.white08,
+   933→   933→              letterSpacing: "0.05em",
+   934→   934→            }}
+   935→   935→          >
+   936→   936→            Mentions légales
+   937→   937→          </span>
+   938→   938→          <div
+   939→   939→            style={{
+   940→   940→              padding: "1px 6px",
+   941→   941→              borderRadius: 3,
+   942→   942→              border: `1px solid ${T.white08}`,
+   943→   943→              fontFamily: "'Inter', sans-serif",
+   944→   944→              fontSize: "0.4rem",
+   945→   945→              fontWeight: 700,
+   946→   946→              color: T.white15,
+   947→   947→              letterSpacing: "0.05em",
+   948→   948→            }}
+   949→   949→          >
+   950→   950→            PEGI 12
+   951→   951→          </div>
+   952→   952→        </div>
+   953→   953→      </footer>
+   954→   954→    </div>
+   955→   955→  );
+   956→   956→}
+   957→   957→
+   958→   958→/* ═══════════════════════════════════════════════════════════════ */
+   959→   959→
+   960→   960→export default function HomePage() {
+   961→   961→  return (
+   962→   962→    <>
+   963→   963→      <HeroSection />
+   964→   964→    </>
+   965→   965→  );
+   966→   966→}
