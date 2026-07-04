@@ -1,8 +1,10 @@
 "use client";
 
 /* ═══════════════════════════════════════════════════════════════
-   DNA-STYLE FOOTER — Black Background
+   DNA-STYLE FOOTER — Full-Width, 287px Height
    Faithful reproduction of Duet Night Abyss footer
+   - Top row: 48px, centered social icons, border-bottom
+   - Bottom: centered 530px content, links with line separators, logos, copyright
    ═══════════════════════════════════════════════════════════════ */
 
 const SOCIAL_ICONS = [
@@ -25,21 +27,30 @@ export default function Footer() {
   return (
     <footer
       style={{
+        position: "relative",
+        bottom: 0,
+        width: "100%",
         background: "#000000",
-        borderTop: "1px solid rgba(255,255,255,0.15)",
-        padding: "0",
-        marginLeft: "200px",
+        zIndex: 10,
+        height: "287px",
+        display: "flex",
+        flexDirection: "column",
       }}
       role="contentinfo"
     >
-      {/* Top section: Social icons */}
+      {/* ═══ Top section: Social icons row ═══
+          Official: 1920x48px, centered, border-bottom 1px solid rgba(255,255,255,0.15)
+          Each icon ~21px height, opacity 0.5, hover 0.8
+      */}
       <div
+        className="top-wrapper"
         style={{
           display: "flex",
-          alignItems: "center",
           justifyContent: "center",
-          padding: "24px 0 20px",
-          gap: "24px",
+          alignItems: "center",
+          height: "48px",
+          borderBottom: "1px solid rgba(255,255,255,0.15)",
+          flexShrink: 0,
         }}
       >
         {SOCIAL_ICONS.map((s) => (
@@ -55,6 +66,7 @@ export default function Footer() {
               width: "auto",
               opacity: 0.5,
               transition: "opacity 0.2s ease",
+              margin: "0 12px",
             }}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLElement).style.opacity = "0.8";
@@ -72,100 +84,112 @@ export default function Footer() {
         ))}
       </div>
 
-      {/* Separator line */}
+      {/* ═══ Bottom section ═══
+          Official: centered 530px wrapper, padding 31px 0
+          - Agreement links row: 440px, 1.2rem, white, separated by thin lines
+          - Company logos row
+          - Copyright: 1.2rem, rgba(255,255,255,0.7), margin-top 33px
+      */}
       <div
-        style={{
-          width: "100%",
-          height: "1px",
-          background: "rgba(255,255,255,0.08)",
-        }}
-      />
-
-      {/* Bottom section */}
-      <div
+        className="bottom"
         style={{
           display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          padding: "20px 40px 28px",
-          gap: "16px",
+          justifyContent: "center",
+          width: "100%",
+          flex: 1,
         }}
       >
-        {/* Legal links row */}
         <div
           style={{
+            width: "530px",
             display: "flex",
+            flexDirection: "column",
             alignItems: "center",
-            gap: "0",
-            flexWrap: "wrap",
-            justifyContent: "center",
+            padding: "31px 0",
           }}
         >
-          {LEGAL_LINKS.map((link, i) => (
-            <div key={link.label} style={{ display: "flex", alignItems: "center" }}>
-              <a
-                href={link.href}
-                style={{
-                  fontSize: "1.2rem",
-                  color: "rgba(255,255,255,0.7)",
-                  textDecoration: "none",
-                  padding: "4px 12px",
-                  transition: "color 0.2s ease",
-                  letterSpacing: "0.02rem",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.color = "#e0dabb";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.7)";
-                }}
-              >
-                {link.label}
-              </a>
-              {i < LEGAL_LINKS.length - 1 && (
-                <div
-                  style={{
-                    width: "1px",
-                    height: "12px",
-                    background: "rgba(255,255,255,0.3)",
-                  }}
-                />
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Company logos / branding row */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "16px",
-          }}
-        >
-          <span
-            className="font-worldtext"
+          {/* Agreement links row — 440px, spaced with line separators */}
+          <div
             style={{
-              fontSize: "1.4rem",
-              color: "rgba(255,255,255,0.5)",
-              letterSpacing: "0.15rem",
+              display: "flex",
+              justifyContent: "space-between",
+              width: "440px",
+              fontSize: "1.2rem",
+              color: "#ffffff",
+              alignItems: "center",
             }}
           >
-            ASCENSION
-          </span>
-        </div>
+            {LEGAL_LINKS.map((link, i) => (
+              <div key={link.label} style={{ display: "flex", alignItems: "center" }}>
+                <a
+                  href={link.href}
+                  style={{
+                    fontSize: "1.2rem",
+                    color: "rgba(255,255,255,0.8)",
+                    textDecoration: "none",
+                    transition: "color 0.2s ease",
+                    letterSpacing: "0.02rem",
+                    whiteSpace: "nowrap",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.color = "#e0dabb";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.8)";
+                  }}
+                >
+                  {link.label}
+                </a>
+                {i < LEGAL_LINKS.length - 1 && (
+                  <div
+                    style={{
+                      width: "2px",
+                      height: "14px",
+                      background: "rgba(255,255,255,0.3)",
+                      transform: "scaleX(0.5)",
+                      marginLeft: "8px",
+                      marginRight: "8px",
+                    }}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
 
-        {/* Copyright */}
-        <div
-          style={{
-            fontSize: "1.2rem",
-            color: "rgba(255,255,255,0.7)",
-            textAlign: "center",
-            letterSpacing: "0.02rem",
-          }}
-        >
-          Copyright © 2025 Ascension. Tous droits réservés.
+          {/* Company logos / branding row */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "16px",
+              marginTop: "24px",
+            }}
+          >
+            <img
+              src="/imgs/icon/white-logo-en.png"
+              alt="ASCENSION"
+              style={{
+                height: "30px",
+                width: "auto",
+                objectFit: "contain",
+                opacity: 0.4,
+              }}
+            />
+          </div>
+
+          {/* Copyright */}
+          <div
+            style={{
+              fontSize: "1.2rem",
+              color: "rgba(255,255,255,0.7)",
+              textAlign: "center",
+              letterSpacing: "0.02rem",
+              marginTop: "33px",
+            }}
+          >
+            Copyright © 2025 Ascension. Tous droits réservés.
+          </div>
         </div>
       </div>
     </footer>

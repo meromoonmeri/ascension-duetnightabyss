@@ -401,14 +401,14 @@ function AscensionWiki() {
       <SearchOverlay />
       <CMSToolbar />
 
-      {/* Session logout button on home */}
+      {/* Session logout button on home — positioned below logo (top-right) */}
       {currentPage === "home" && session?.user && preloaderComplete && (
         <button
           onClick={() => signOut({ callbackUrl: "/" })}
           style={{
             position: "fixed",
-            top: "20px",
-            right: "20px",
+            top: "155px",
+            right: "31px",
             zIndex: 90,
             display: "flex",
             alignItems: "center",

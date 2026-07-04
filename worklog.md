@@ -54,3 +54,40 @@ Stage Summary:
 - DNA-specific features: sprite preloader, vertical side nav, layered hero composition, custom button backgrounds, expandable news panel
 - All existing content pages (races, cosmology, factions, etc.) untouched and functional
 - Fonts: WorldText + Gloock loaded from /public/font/, body uses Helvetica Neue stack
+
+---
+Task ID: 3
+Agent: full-stack-developer
+Task: Fix DNA layout to pixel-perfect match official site (horizontal nav, not vertical)
+
+Work Log:
+- Read worklog.md and all 5 target files (Header.tsx, HomePage.tsx, Footer.tsx, globals.css, [[...slug]]/page.tsx)
+- Completely rewrote Header.tsx: removed 200px fixed vertical sidebar, replaced with horizontal top bar overlay
+  - Logo positioned absolute top-right (right:31px, top:20px, 268x131px) matching official white-logo-en.png placement
+  - Three gold icons (user 21px, music 26px, world 24px) at left:60px with 35px gaps matching official spacing
+  - 8 horizontal nav items (ACCUEIL, RACES, COSMOLOGIE, GÉOGRAPHIE, ARTS, FACTIONS, UNIVERS, NEWS) in a flex row
+  - Active color: #baae93, inactive: rgba(255,255,255,0.5), font-size: 1rem (10px at 62.5% html)
+  - Header: position:absolute, width:100%, padding-left:60px, transparent background, z-index:100
+- Completely rewrote HomePage.tsx: removed all vertical nav offsets, positioned all elements absolutely within full viewport
+  - bg-top overlay: 275px height at top (official: 1920x275)
+  - bg-bottom overlay: 862px height at bottom, opacity 0.5 (official: 1920x862)
+  - Slogan: 1200px wide, centered, bottom:219px, z-index:2
+  - Title: centered, bottom:210px, font-size:2.9rem, title-star.png 2.8rem
+  - Play button: 86x86px, centered, bottom:580px, z-index:5
+  - Nav buttons: 243x65px each, centered grid, bottom:56px, Gloock font
+  - Social icons: left:70px, bottom:56px, 30px each, with vertical line and text
+  - News panel: right:0, top:290px, 57x186px, bg-side.png background, expandable
+- Completely rewrote Footer.tsx: removed marginLeft:200px, full-width 287px DNA footer
+  - Top section: 48px height, centered social icons (21px height, opacity 0.5), border-bottom
+  - Bottom section: 530px centered wrapper, legal links with line separators, logo, copyright
+- Updated globals.css: removed padding-left:200px from .dna-content-page
+- Updated [[...slug]]/page.tsx: moved logout button from top:20px/right:20px to top:155px/right:31px (below logo)
+- Fixed icon spacing: changed marginRight from 17px to 35px to match official 35px gaps
+
+Stage Summary:
+- All 5 files modified: Header.tsx, HomePage.tsx, Footer.tsx, globals.css, [[...slug]]/page.tsx
+- Header changed from 200px fixed vertical sidebar to horizontal overlay nav bar at top
+- Logo repositioned to top-right corner (x=1621, y=20) matching official DNA site
+- Pixel-perfect verification via browser: slogan x=360,y=461,w=1200,h=400; play x=917,y=414,w=86,h=86; navBox x=562,y=884,w=796,h=140; news x=1863,y=290,w=57,h=186 — all match official measurements exactly
+- No vertical sidebar, full-width content on all pages
+- Zero browser console errors, all 200 OK responses

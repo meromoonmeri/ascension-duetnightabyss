@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import Image from "next/image";
+import { useState, useCallback } from "react";
 import { useNavigation, type PageType } from "@/store/navigationStore";
 
 /* ═══════════════════════════════════════════════════════════════
-   DNA-STYLE HEADER — Vertical Side Navigation
-   Faithful reproduction of Duet Night Abyss website navigation
+   DNA-STYLE HEADER — Horizontal Top Navigation Bar
+   Faithful reproduction of Duet Night Abyss website header
+   Logo positioned top-right, nav items horizontal at top-left
    ═══════════════════════════════════════════════════════════════ */
 
 interface NavItem {
@@ -46,8 +46,8 @@ export default function Header() {
       "race-technique": "races",
       cosmology: "cosmology",
       "cosmology-detail": "cosmology",
-      geography: "géographie",
-      "geography-detail": "géographie",
+      geography: "geography",
+      "geography-detail": "geography",
       arts: "arts",
       "art-detail": "arts",
       technique: "arts",
@@ -80,134 +80,162 @@ export default function Header() {
   return (
     <header
       style={{
-        position: "fixed",
-        top: 0,
+        position: "absolute",
+        width: "100%",
         left: 0,
-        width: "200px",
-        height: "100vh",
+        top: 0,
+        padding: "0 0 0 60px",
         zIndex: 100,
-        display: "flex",
-        flexDirection: "column",
         background: "transparent",
-        borderBottom: "1px solid rgba(255,255,255,0.15)",
       }}
     >
-      {/* Logo */}
+      {/* ═══ Logo — top-right ═══ */}
       <div
+        onClick={() => handleNav("home")}
         style={{
-          position: "relative",
-          height: "90px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "0 20px",
+          position: "absolute",
+          right: "31px",
+          top: "20px",
+          width: "268px",
+          height: "131px",
+          zIndex: 5,
+          cursor: "pointer",
         }}
+        role="button"
+        aria-label="ASCENSION — Retour à l'accueil"
+        tabIndex={0}
       >
-        {/* DNA uses white-logo-en.png — for Ascension we use text */}
-        <div
-          className="font-worldtext"
+        <img
+          src="/imgs/icon/white-logo-en.png"
+          alt="ASCENSION Logo"
           style={{
-            fontSize: "1.8rem",
-            color: "#ffffff",
-            letterSpacing: "0.2rem",
-            fontWeight: "normal",
-            cursor: "pointer",
-            whiteSpace: "nowrap",
+            height: "130px",
+            width: "auto",
+            objectFit: "contain",
+            display: "block",
           }}
-          onClick={() => handleNav("home")}
-        >
-          ASCENSION
-        </div>
+        />
       </div>
 
-      {/* Icon controls row */}
+      {/* ═══ Main nav bar — horizontal, left side ═══ */}
       <div
         style={{
+          position: "absolute",
+          left: "60px",
+          top: 0,
           display: "flex",
+          flexDirection: "row",
           alignItems: "center",
-          justifyContent: "center",
-          gap: "16px",
-          padding: "8px 20px 16px",
-          borderBottom: "1px solid rgba(255,255,255,0.15)",
+          height: "64px",
+          zIndex: 10,
         }}
       >
-        {/* User icon */}
-        <div style={{ width: "20px", height: "20px", cursor: "pointer", opacity: 0.7 }}>
+        {/* Left icons area */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            height: "64px",
+            marginRight: "30px",
+          }}
+        >
+          {/* User icon */}
           <img
             src="/imgs/icon/user-gold.png"
             alt="User"
-            style={{ width: "100%", height: "100%", objectFit: "contain" }}
+            style={{
+              height: "21px",
+              width: "auto",
+              marginRight: "35px",
+              cursor: "pointer",
+              opacity: 0.7,
+              transition: "opacity 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.opacity = "1";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.opacity = "0.7";
+            }}
           />
-        </div>
 
-        {/* Music toggle */}
-        <div
-          style={{ width: "20px", height: "20px", cursor: "pointer", opacity: 0.7 }}
-          onClick={() => setMusicOn(!musicOn)}
-        >
+          {/* Music toggle */}
           <img
             src={musicOn ? "/imgs/icon/music-on-gold.png" : "/imgs/icon/music-off-gold.png"}
-            alt="Music"
-            style={{ width: "100%", height: "100%", objectFit: "contain" }}
+            alt={musicOn ? "Music On" : "Music Off"}
+            onClick={() => setMusicOn(!musicOn)}
+            style={{
+              height: "26px",
+              width: "auto",
+              marginRight: "35px",
+              cursor: "pointer",
+              opacity: 0.7,
+              transition: "opacity 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.opacity = "1";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.opacity = "0.7";
+            }}
           />
-        </div>
 
-        {/* Language/World icon */}
-        <div style={{ width: "20px", height: "20px", cursor: "pointer", opacity: 0.7 }}>
+          {/* Language/World icon */}
           <img
             src="/imgs/icon/world-gold.png"
             alt="Language"
-            style={{ width: "100%", height: "100%", objectFit: "contain" }}
+            style={{
+              height: "24px",
+              width: "auto",
+              cursor: "pointer",
+              opacity: 0.7,
+              transition: "opacity 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.opacity = "1";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.opacity = "0.7";
+            }}
           />
         </div>
-      </div>
 
-      {/* Vertical Navigation Menu */}
-      <nav
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          padding: "20px 0",
-          gap: "14px",
-        }}
-        role="navigation"
-        aria-label="Main navigation"
-      >
-        {NAV_ITEMS.map((item) => {
-          const isActive =
-            activePage === item.page.toLowerCase() ||
-            (item.page === "home" && activePage === "home");
-          const itemKey = item.page.toLowerCase();
+        {/* Horizontal Navigation Items */}
+        <nav
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            height: "64px",
+            alignItems: "center",
+          }}
+          role="navigation"
+          aria-label="Main navigation"
+        >
+          {NAV_ITEMS.map((item) => {
+            const isActive = activePage === item.page.toLowerCase();
 
-          return (
-            <button
-              key={item.page}
-              onClick={() => handleNav(item.page)}
-              className="font-worldtext"
-              style={{
-                background: "none",
-                border: "none",
-                outline: "none",
-                cursor: "pointer",
-                padding: "6px 20px",
-                textAlign: "left",
-                width: "100%",
-                transition: "color 0.2s ease",
-              }}
-              aria-label={item.label}
-              aria-current={isActive ? "page" : undefined}
-            >
-              <div
+            return (
+              <button
+                key={item.page}
+                onClick={() => handleNav(item.page)}
+                className="font-worldtext"
                 style={{
-                  fontSize: "1.4rem",
-                  letterSpacing: "0.1rem",
-                  color: isActive ? "#baae93" : "rgba(255,255,255,0.5)",
-                  fontWeight: isActive ? "bold" : "normal",
+                  background: "none",
+                  border: "none",
+                  outline: "none",
+                  cursor: "pointer",
+                  padding: "0 16px",
+                  height: "64px",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "flex-start",
                   transition: "color 0.2s ease",
-                  lineHeight: 1.3,
+                  textTransform: "uppercase",
+                  whiteSpace: "nowrap",
                 }}
+                aria-label={item.label}
+                aria-current={isActive ? "page" : undefined}
                 onMouseEnter={(e) => {
                   if (!isActive) {
                     (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.8)";
@@ -219,23 +247,34 @@ export default function Header() {
                   }
                 }}
               >
-                {item.label}
-              </div>
-              <div
-                style={{
-                  fontSize: "0.9rem",
-                  color: isActive ? "rgba(186,174,147,0.6)" : "rgba(255,255,255,0.25)",
-                  letterSpacing: "0.05rem",
-                  marginTop: "2px",
-                  transition: "color 0.2s ease",
-                }}
-              >
-                {item.sublabel}
-              </div>
-            </button>
-          );
-        })}
-      </nav>
+                <span
+                  style={{
+                    fontSize: "1rem",
+                    letterSpacing: "0.1rem",
+                    color: isActive ? "#baae93" : "rgba(255,255,255,0.5)",
+                    fontWeight: isActive ? "bold" : "normal",
+                    lineHeight: 1.3,
+                    transition: "color 0.2s ease",
+                  }}
+                >
+                  {item.label}
+                </span>
+                <span
+                  style={{
+                    fontSize: "0.8rem",
+                    color: isActive ? "rgba(186,174,147,0.6)" : "rgba(255,255,255,0.25)",
+                    letterSpacing: "0.05rem",
+                    transition: "color 0.2s ease",
+                    marginTop: "1px",
+                  }}
+                >
+                  {item.sublabel}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+      </div>
     </header>
   );
 }

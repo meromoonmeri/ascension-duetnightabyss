@@ -158,7 +158,6 @@ body {
 
 /* --- Sub-page content wrapper (used when not on home) --- */
 .dna-content-page {
-  padding-left: 200px;
   min-height: 100vh;
   background: #000;
   padding-top: 90px;
