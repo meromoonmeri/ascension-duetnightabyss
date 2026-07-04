@@ -1,0 +1,635 @@
+     1→// Ascension Race Data
+     2→// Color palettes defined per race, visible in both day/night modes
+     3→
+     4→export interface RankInfo {
+     5→  rank: string;
+     6→  label: string;
+     7→  description: string;
+     8→}
+     9→
+    10→export interface RaceTechnique {
+    11→  id: string;
+    12→  nameJp: string;
+    13→  nameFr: string;
+    14→  subtitle: string;
+    15→  rank: string;
+    16→  classification: string;
+    17→  nature: string;
+    18→  vecteur: string;
+    19→  portee: string;
+    20→  techniqueParente: string;
+    21→  techniqueDerivee: string;
+    22→  vueEnsemble: string;
+    23→  effets: string[];
+    24→  fonctionnement: string[];
+    25→  faiblesses: string[];
+    26→  imageUrl?: string;
+    27→}
+    28→
+    29→export interface RaceData {
+    30→  id: string;
+    31→  name: string;
+    32→  nameJp: string;
+    33→  subtitle: string;
+    34→  description: string;
+    35→  lore: string;
+    36→  characteristics: string[];
+    37→  // Color system
+    38→  colors: {
+    39→    primary: string;      // Main accent (borders, headers)
+    40→    secondary: string;    // Glow/highlight
+    41→    bg: string;           // Section background tint
+    42→    text: string;         // Text on dark bg
+    43→    textLight: string;    // Text on light bg
+    44→    glow: string;         // Box-shadow / halo color
+    45→  };
+    46→  dayColors: {
+    47→    primary: string;
+    48→    secondary: string;
+    49→    bg: string;
+    50→    text: string;
+    51→    glow: string;
+    52→  };
+    53→  ranks: RankInfo[];
+    54→  techniques: RaceTechnique[];
+    55→  icon: string; // Lucide icon name or emoji placeholder
+    56→  heroGif?: string; // Optional animated GIF for race detail hero
+    57→}
+    58→
+    59→export const RANKS: RankInfo[] = [
+    60→  { rank: "F", label: "Novice", description: "Premier pas dans la voie de la race" },
+    61→  { rank: "E", label: "Apprenti", description: "Maîtrise des bases raciales" },
+    62→  { rank: "D", label: "Initié", description: "Début de la spécialisation" },
+    63→  { rank: "C", label: "Compétent", description: "Maîtrise solide des capacités raciales" },
+    64→  { rank: "B", label: "Expert", description: "Techniques avancées débloquées" },
+    65→  { rank: "A", label: "Élite", description: "Puissance raciale pleinement éveillée" },
+    66→  { rank: "S", label: "Maître", description: "Au sommet de la hiérarchie raciale" },
+    67→  { rank: "EX", label: "Transcendant", description: "Au-delà des limites connues" },
+    68→];
+    69→
+    70→export const RACE_DATA: RaceData[] = [
+    71→  {
+    72→    id: "humains",
+    73→    name: "Humains",
+    74→    nameJp: "人間",
+    75→    subtitle: "La race de l'adaptabilité infinie",
+    76→    description: "Les Humains d'Ascension ne sont pas les êtres fragiles des mondes ordinaires. Leur trait racial fondamental est une plasticité énergétique sans équivalent : là où les autres races sont prisonnières de leur nature, les Humains peuvent emprunter, adapter et fusionner les mécanismes énergétiques des autres peuples.",
+    77→    lore: "Parmi les 180 nations du Traité Commercial de l'Éther, les Humains constituent la population la plus nombreuse et la plus répandue. Leur civilisation s'étend des plaines fertiles de Solaria aux cités marchandes de l'Archipel des Vents. Mais cette omniprésence ne signifie pas faiblesse — bien au contraire. C'est précisément leur diversité qui forge leur force.",
+    78→    characteristics: [
+    79→      "Adaptabilité énergétique — peut apprendre des techniques d'autres races",
+    80→      "Plasticité d'Éveil — les fondations raciales se moldent selon l'Art pratiqué",
+    81→      "Résilience cognitive — apprentissage accéléré des systèmes complexes",
+    82→      "Potentiel illimité — pas de plafond racial, seulement celui de l'effort",
+    83→    ],
+    84→    colors: {
+    85→      primary: "#4682B4",
+    86→      secondary: "#A9C4D8",
+    87→      bg: "rgba(70,130,180,0.08)",
+    88→      text: "#B0C4DE",
+    89→      textLight: "#2C5F8A",
+    90→      glow: "rgba(70,130,180,0.4)",
+    91→    },
+    92→    dayColors: {
+    93→      primary: "#2C5F8A",
+    94→      secondary: "#4682B4",
+    95→      bg: "rgba(70,130,180,0.06)",
+    96→      text: "#1E3A5F",
+    97→      glow: "rgba(44,95,138,0.3)",
+    98→    },
+    99→    ranks: RANKS,
+   100→    techniques: [
+   101→      {
+   102→        id: "humain-flashstep",
+   103→        nameJp: "フラッシュステップ",
+   104→        nameFr: "FlashStep",
+   105→        subtitle: "Déplacement Éclair Adaptatif",
+   106→        rank: "C",
+   107→        classification: "Technique",
+   108→        nature: "Acquise",
+   109→        vecteur: "Flux Énergétique",
+   110→        portee: "Soi-même",
+   111→        techniqueParente: "—",
+   112→        techniqueDerivee: "FlashStep — Variante Ombre",
+   113→        vueEnsemble: "FlashStep est une technique de déplacement instantané qui exploite la plasticité énergétique humaine. Le pratiquant canalise une impulsion de flux dans ses membres inférieurs, propulsant son corps sur une distance de 3 cases en un éclair.",
+   114→        effets: [
+   115→          "Déplacement instantané de 3 cases dans une direction choisie",
+   116→          "Aucune trace énergétique résiduelle après le déplacement",
+   117→          "Peut être enchaîné une fois par tour",
+   118→        ],
+   119→        fonctionnement: [
+   120→          "Le pratiquant concentre son flux dans les jambes pendant 0.5 secondes",
+   121→          "L'énergie est libérée en une impulsion contrôlée propulsant le corps",
+   122→          "Le déplacement est si rapide qu'il est perçu comme une téléportation",
+   123→        ],
+   124→        faiblesses: [
+   125→          "Ne peut pas traverser les obstacles solides",
+   126→          "Laisse une micro-pause de 0.2s entre les déplacements",
+   127→          "Coût énergétique croît avec la distance effective parcourue",
+   128→        ],
+   129→      },
+   130→      {
+   131→        id: "humain-perception-augmentee",
+   132→        nameJp: "強化知覚",
+   133→        nameFr: "Perception Augmentée",
+   134→        subtitle: "Sens Aiguisés de l'Adaptateur",
+   135→        rank: "B",
+   136→        classification: "Passif",
+   137→        nature: "Innée",
+   138→        vecteur: "Sens Naturels",
+   139→        portee: "Soi-même",
+   140→        techniqueParente: "—",
+   141→        techniqueDerivee: "Vision Totale",
+   142→        vueEnsemble: "Les Humains ayant atteint le rang B développent naturellement une perception supérieure. Leurs sens s'affûtent au-delà des limites physiques normales, leur permettant de détecter les fluctuations énergétiques dans un rayon de 20 mètres.",
+   143→        effets: [
+   144→          "Détection des présences énergétiques dans un rayon de 20m",
+   145→          "Sensibilisation aux variations de flux ambiant",
+   146→          "Réflexes améliorés de 40% face aux attaques surprises",
+   147→        ],
+   148→        fonctionnement: [
+   149→          "Le système nerveux s'adapte progressivement aux stimuli énergétiques",
+   150→          "Le cerveau traite les informations sensorielles à une vitesse accrue",
+   151→          "Une carte mentale de l'environnement énergétique se construit en temps réel",
+   152→        ],
+   153→        faiblesses: [
+   154→          "Sensibilité accrue aux attaques sonores et sensorielles",
+   155→          "Ne fonctionne pas dans les zones de nullité énergétique",
+   156→          "Fatigue mentale en cas d'utilisation prolongée",
+   157→        ],
+   158→      },
+   159→    ],
+   160→    icon: "/icone-humain.png",
+   161→  },
+   162→  {
+   163→    id: "elfes",
+   164→    name: "Elfes",
+   165→    nameJp: "エルフ",
+   166→    subtitle: "Gardiens de la forêt primordiale",
+   167→    description: "Les Elfes sont les enfants de la forêt primordiale, liés par un pacte ancestral aux arbres-mondres. Leur longévité dépasse celle de toutes les autres races — certains Elfes vivent plus de mille ans. Cette immortalité relative leur confère une sagesse et une maîtrise des arts naturels inégalées.",
+   168→    lore: "Les Elfes habitent les canopées des Forêts d'Argent, des territoires si vastes qu'une vie humaine entière ne suffirait pas à en explorer les confins. Leur civilisation est structurée en Circles — des communautés sylvestres dirigées par des Archontes ayant vécu plusieurs siècles.",
+   169→    characteristics: [
+   170→      "Longévité millénaire — mémoire accumulée sur des siècles",
+   171→      "Affinité sylvestre — communion naturelle avec la flore",
+   172→      "Perception éthérée — vision au-delà du spectre visible",
+   173→      "Mana ambiant — régénération énergétique accélérée en forêt",
+   174→    ],
+   175→    colors: {
+   176→      primary: "#2E8B57",
+   177→      secondary: "#90EE90",
+   178→      bg: "rgba(46,139,87,0.08)",
+   179→      text: "#A8D5BA",
+   180→      textLight: "#1B5E3A",
+   181→      glow: "rgba(46,139,87,0.4)",
+   182→    },
+   183→    dayColors: {
+   184→      primary: "#1B5E3A",
+   185→      secondary: "#2E8B57",
+   186→      bg: "rgba(46,139,87,0.06)",
+   187→      text: "#0D3B24",
+   188→      glow: "rgba(27,94,58,0.3)",
+   189→    },
+   190→    ranks: RANKS,
+   191→    techniques: [
+   192→      {
+   193→        id: "elfe-lien-sylvestre",
+   194→        nameJp: "森の絆",
+   195→        nameFr: "Lien Sylvestre",
+   196→        subtitle: "Communion avec le monde végétal",
+   197→        rank: "A",
+   198→        classification: "Unique",
+   199→        nature: "Innée",
+   200→        vecteur: "Flora",
+   201→        portee: "Zone (50m)",
+   202→        techniqueParente: "—",
+   203→        techniqueDerivee: "Lien Sylvestre — Domination",
+   204→        vueEnsemble: "Le Lien Sylvestre est la capacité innée suprême des Elfes. En activant ce lien, l'Elfe fusionne temporairement sa conscience avec le réseau mycélien de la forêt environnante, percevant tout ce qui se trouve dans un rayon de 50 mètres comme s'il s'agissait de son propre corps.",
+   205→        effets: [
+   206→          "Perception totale dans un rayon de 50m via le réseau végétal",
+   207→          "Contrôle partiel de la flore dans la zone (croissance accélérée, mouvements)",
+   208→          "Partage de sensations avec les êtres végétaux connectés",
+   209→        ],
+   210→        fonctionnement: [
+   211→          "L'Elfe établit un contact physique avec un arbre ou une racine",
+   212→          "Son flux énergétique se propage dans le réseau mycélien en 2 secondes",
+   213→          "La conscience de l'Elfe se dilate pour englober la zone couverte",
+   214→        ],
+   215→        faiblesses: [
+   216→          "Inutilisable en milieu urbain ou désertique sans végétation",
+   217→          "L'Elfe est vulnérable pendant la phase de connexion (2s)",
+   218→          "Dégâts infligés à la flore connectée se répercutent partiellement",
+   219→        ],
+   220→      },
+   221→    ],
+   222→    icon: "/icone-elfe.png",
+   223→  },
+   224→  {
+   225→    id: "hommes-betes",
+   226→    name: "Hommes-Bêtes",
+   227→    nameJp: "獣人",
+   228→    subtitle: "La férocité primordiale incarnée",
+   229→    description: "Les Hommes-Bêtes portent en eux le sang des ancêtres sauvages. Mi-humains, mi-animaux, ils incarnent la fusion entre civilisation et instinct. Leur puissance brute est sans équivalent parmi les races mortelles, et leurs sens sont aiguisés bien au-delà de la norme.",
+   230→    lore: "Les clans de Hommes-Bêtes sont dispersés à travers les territoires sauvages du monde. Chaque clan est lié à un ancêtre animal spécifique — félin, lupin, ursidé, aviaire — dont il hérite les traits et les capacités fondamentales.",
+   231→    characteristics: [
+   232→      "Force primordiale — puissance physique 2-3x supérieure à un humain du même rang",
+   233→      "Instinct prédateur — réactions de combat quasi-instantanées",
+   234→      "Sens surdéveloppés — odorat, ouïe et vision nocturne exceptionnels",
+   235→      "Mue bestiale — transformation partielle ou totale selon le rang",
+   236→    ],
+   237→    colors: {
+   238→      primary: "#D2691E",
+   239→      secondary: "#FFBF00",
+   240→      bg: "rgba(210,105,30,0.08)",
+   241→      text: "#E8C49A",
+   242→      textLight: "#8B4513",
+   243→      glow: "rgba(210,105,30,0.4)",
+   244→    },
+   245→    dayColors: {
+   246→      primary: "#8B4513",
+   247→      secondary: "#D2691E",
+   248→      bg: "rgba(210,105,30,0.06)",
+   249→      text: "#5C2E0E",
+   250→      glow: "rgba(139,69,19,0.3)",
+   251→    },
+   252→    ranks: RANKS,
+   253→    techniques: [
+   254→      {
+   255→        id: "betes-mue-sauvage",
+   256→        nameJp: "野獣変身",
+   257→        nameFr: "Mue Sauvage",
+   258→        subtitle: "L'éveil de la bête intérieure",
+   259→        rank: "B",
+   260→        classification: "Fondamentale",
+   261→        nature: "Innée",
+   262→        vecteur: "Corps",
+   263→        portee: "Soi-même",
+   264→        techniqueParente: "—",
+   265→        techniqueDerivee: "Mue Totale",
+   266→        vueEnsemble: "La Mue Sauvage est le fondement du combat Homme-Bête. Le pratiquant libère partiellement son héritage animal, transformant ses membres en armes naturelles tout en conservant sa conscience humaine.",
+   267→        effets: [
+   268→          "Transformation partielle : griffes, crocs, pelage, yeux luminescents",
+   269→          "Force physique multipliée par 2.5",
+   270→          "Vitesse et réflexes augmentés de 60%",
+   271→        ],
+   272→        fonctionnement: [
+   273→          "Le pratiquant canalise son instinct primordial via son flux énergétique",
+   274→          "La transformation débute par les extrémités et s'étend en 1.5 secondes",
+   275→          "L'état se maintient tant que le flux est alimenté",
+   276→        ],
+   277→        faiblesses: [
+   278→          "L'instinct peut submerger la raison en cas de forte émotion",
+   279→          "Vulnérabilité accrue aux techniques anti-transformation",
+   280→          "Durée limitée par les réserves de flux du pratiquant",
+   281→        ],
+   282→      },
+   283→    ],
+   284→    icon: "/icone-homme-bete.png",
+   285→  },
+   286→  {
+   287→    id: "titans",
+   288→    name: "Titans",
+   289→    nameJp: "タイタン",
+   290→    subtitle: "Les piliers du monde ancien",
+   291→    description: "Les Titans sont les êtres les plus massifs et les plus résistants de tout le monde d'Ascension. Leur corps est littéralement façonné dans la roche vivante — un héritage direct des Mechaz qui ont sculpté les continents. Leur patience est légendaire, tout comme leur puissance dévastatrice.",
+   292→    lore: "On raconte que les premiers Titans émergèrent des entrailles de la terre lorsque les Mechaz achevèrent de sculpter les reliefs du monde. Chaque Titan est relié à un territoire spécifique — une montagne, une vallée, un plateau — dont il est le gardien naturel.",
+   293→    characteristics: [
+   294→      "Armure vivante — peau de roche avec résistance naturelle exceptionnelle",
+   295→      "Force titanesque — capable de soulever des masses colossales",
+   296→      "Résilience sismique — immunisé aux dégâts de chute et de compression",
+   297→      "Géomancie innée — manipulation partielle de la terre et de la pierre",
+   298→    ],
+   299→    colors: {
+   300→      primary: "#C19A6B",
+   301→      secondary: "#8B7355",
+   302→      bg: "rgba(193,154,107,0.08)",
+   303→      text: "#D4C4A8",
+   304→      textLight: "#6B5B3E",
+   305→      glow: "rgba(193,154,107,0.4)",
+   306→    },
+   307→    dayColors: {
+   308→      primary: "#6B5B3E",
+   309→      secondary: "#C19A6B",
+   310→      bg: "rgba(193,154,107,0.06)",
+   311→      text: "#4A3F2B",
+   312→      glow: "rgba(107,91,62,0.3)",
+   313→    },
+   314→    ranks: RANKS,
+   315→    techniques: [
+   316→      {
+   317→        id: "titan-armure-ancestrale",
+   318→        nameJp: "先祖の鎧",
+   319→        nameFr: "Armure Ancestrale",
+   320→        subtitle: "La roche du monde comme bouclier",
+   321→        rank: "A",
+   322→        classification: "Fondamentale",
+   323→        nature: "Innée",
+   324→        vecteur: "Terre",
+   325→        portee: "Soi-même",
+   326→        techniqueParente: "—",
+   327→        techniqueDerivee: "Forteresse Vivante",
+   328→        vueEnsemble: "L'Armure Ancestrale est la capacité signature des Titans. En fusionnant avec la roche environnante, le Titan enveloppe son corps d'une carapace de pierre vivante qui absorbe et redirige l'énergie des impacts reçus.",
+   329→        effets: [
+   330→          "Réduction des dégâts physiques de 70%",
+   331→          "Absorption et stockage de l'énergie cinétique des impacts",
+   332→          "Libération de l'énergie stockée sous forme d'onde de choc",
+   333→        ],
+   334→        fonctionnement: [
+   335→          "Le Titan entre en résonance avec les minéraux environnants",
+   336→          "La pierre se modèle autour de son corps en 3 secondes",
+   337→          "L'armure est vivante et s'adapte aux menaces perçues",
+   338→        ],
+   339→        faiblesses: [
+   340→          "Vitesse de déplacement réduite de 40% sous armure complète",
+   341→          "Vulnérable aux attaques énergétiques pures (non-physiques)",
+   342→          "L'armure se fragilise si le Titan est éloigné de toute source minérale",
+   343→        ],
+   344→      },
+   345→    ],
+   346→    icon: "/icone-titan.png",
+   347→    heroGif: "/race-titan.gif",
+   348→  },
+   349→  {
+   350→    id: "demons",
+   351→    name: "Démons",
+   352→    nameJp: "悪魔",
+   353→    subtitle: "Les descendants des abysses",
+   354→    description: "Les Démons sont les enfants des plans infernaux, des êtres dont l'énergie est naturellement imprégnée des forces destructrices de l'abîme. Leur puissance croît avec l'intensité de leurs émotions — la colère, la fascination, le désir — ce qui les rend aussi imprévisibles que redoutables.",
+   355→    lore: "Les Démons d'Ascension ne sont pas les créatures maléfiques des légendes populaires. Ils naissent des Rifts — des déchirures entre les plans de réalité — et possèdent leur propre civilisation structurée autour de Cliques, des organisations hiérarchiques dirigées par les plus puissants d'entre eux.",
+   356→    characteristics: [
+   357→      "Émotion amplificatrice — puissance croît avec l'intensité émotionnelle",
+   358→      "Rift-walking — capacité innée de franchir partiellement les plans",
+   359→      "Aura corruptrice — l'énergie démoniaque affaiblit les ennemis proches",
+   360→      "Résilience abyssale — régénération accélérée dans les environnements sombres",
+   361→    ],
+   362→    colors: {
+   363→      primary: "#7B2FBE",
+   364→      secondary: "#A855F7",
+   365→      bg: "rgba(123,47,190,0.08)",
+   366→      text: "#C4A8E8",
+   367→      textLight: "#4A1A7A",
+   368→      glow: "rgba(123,47,190,0.4)",
+   369→    },
+   370→    dayColors: {
+   371→      primary: "#4A1A7A",
+   372→      secondary: "#7B2FBE",
+   373→      bg: "rgba(123,47,190,0.06)",
+   374→      text: "#2D0F4A",
+   375→      glow: "rgba(74,26,122,0.3)",
+   376→    },
+   377→    ranks: RANKS,
+   378→    techniques: [
+   379→      {
+   380→        id: "demon-porte-abyssale",
+   381→        nameJp: "深淵の門",
+   382→        nameFr: "Porte Abyssale",
+   383→        subtitle: "Fracture entre les plans de réalité",
+   384→        rank: "S",
+   385→        classification: "Unique",
+   386→        nature: "Innée",
+   387→        vecteur: "Rift",
+   388→        portee: "Zone (30m)",
+   389→        techniqueParente: "—",
+   390→        techniqueDerivee: "—",
+   391→        vueEnsemble: "La Porte Abyssale est l'expression ultime du pouvoir démoniaque. Le Démon ouvre une brèche temporaire entre le plan matériel et l'Abîme, libérant une vague d'énergie corrosive qui consume tout sur son passage.",
+   392→        effets: [
+   393→          "Ouverture d'un Rift de 10m de diamètre pendant 30 secondes",
+   394→          "Vague d'énergie abyssale infligeant des dégâts continus dans la zone",
+   395→          "Invocation partielle de créatures abyssales mineures",
+   396→        ],
+   397→        fonctionnement: [
+   398→          "Le Démon canalise son émotion la plus intense comme clé d'ouverture",
+   399→          "Le tissu de la réalité se déchire en 5 secondes d'incantation",
+   400→          "L'énergie abyssale s'écoule librement tant que la Porte reste ouverte",
+   401→        ],
+   402→        faiblesses: [
+   403→          "Le Démon est vulnérable pendant les 5 secondes d'incantation",
+   404→          "La Porte peut se retourner contre son invocateur si son contrôle faiblit",
+   405→          "Coût énergétique colossal — réservé aux situations extrêmes",
+   406→        ],
+   407→      },
+   408→    ],
+   409→    icon: "/icone-demon.png",
+   410→  },
+   411→  {
+   412→    id: "vampires",
+   413→    name: "Vampires",
+   414→    nameJp: "ヴァンパイア",
+   415→    subtitle: "La noblesse du sang éternel",
+   416→    description: "Les Vampires d'Ascension sont bien plus que des buveurs de sang. Ils sont les gardiens d'un héritage sanguin millénaire, une lignée de noblesse sombre dont le pouvoir se transmet de génération en génération. Chaque goutte de sang qu'ils consomment renforce leur lien avec leurs ancêtres.",
+   417→    lore: "La Maison du Sang Radieux — le plus ancien lignage vampire — règne sur les territoires crépusculaires depuis des millénaires. Les Vampires vivent dans des cités souterraines d'une beauté gothique, où le sang coule littéralement dans les murs — un réseau de veines vivantes qui alimente leurs domaines en énergie.",
+   418→    characteristics: [
+   419→      "Hémancratie — pouvoir croît avec la pureté et l'ancienneté du sang absorbé",
+   420→      "Vitæ — énergie vitale extraite du sang, remplaçant le flux standard",
+   421→      "Domination sanguinaire — contrôle partiel des êtres ayant du sang",
+   422→      "Immortalité conditionnelle — ne meurt que par destruction du cœur vampire",
+   423→    ],
+   424→    colors: {
+   425→      primary: "#8B0000",
+   426→      secondary: "#D4AF37",
+   427→      bg: "rgba(139,0,0,0.08)",
+   428→      text: "#E8B4B8",
+   429→      textLight: "#5C0000",
+   430→      glow: "rgba(139,0,0,0.4)",
+   431→    },
+   432→    dayColors: {
+   433→      primary: "#5C0000",
+   434→      secondary: "#8B0000",
+   435→      bg: "rgba(139,0,0,0.06)",
+   436→      text: "#3D0000",
+   437→      glow: "rgba(92,0,0,0.3)",
+   438→    },
+   439→    ranks: RANKS,
+   440→    techniques: [
+   441→      {
+   442→        id: "vampire-autorite-sanguinaire",
+   443→        nameJp: "血の権威",
+   444→        nameFr: "Autorité Sanguinaire",
+   445→        subtitle: "Le commandement du sang noble",
+   446→        rank: "C",
+   447→        classification: "Acquise",
+   448→        nature: "Active",
+   449→        vecteur: "Vitæ",
+   450→        portee: "Contact (5m)",
+   451→        techniqueParente: "—",
+   452→        techniqueDerivee: "Autorité Sanguinaire — Domination Totale",
+   453→        vueEnsemble: "L'Autorité Sanguinaire est l'une des capacités les plus redoutées du lignage vampire. En imposant sa volonté via le Vitæ — l'énergie vitale extraite du sang — le Vampire peut exercer un contrôle partiel sur les êtres vivants dotés de sang.",
+   454→        effets: [
+   455→          "Immobilisation temporaire d'une cible ayant du sang (3 secondes)",
+   456→          "Perception des émotions et de l'état physique via le sang de la cible",
+   457→          "Commandement simple pouvant être imposé (reculer, s'arrêter, se baisser)",
+   458→        ],
+   459→        fonctionnement: [
+   460→          "Le Vampire projette son Vitæ vers la cible via le regard ou le contact",
+   461→          "L'énergie entre en résonance avec le sang de la cible en 0.8 secondes",
+   462→          "Un lien de contrôle se forme, permettant l'immobilisation ou le commandement",
+   463→        ],
+   464→        faiblesses: [
+   465→          "Inefficace contre les êtres sans sang (Démons de haut rang, golems)",
+   466→          "La résistance de la cible diminue l'effet (les rangs supérieurs résistent mieux)",
+   467→          "Chaque utilisation consomme une quantité significative de Vitæ",
+   468→        ],
+   469→      },
+   470→      {
+   471→        id: "vampire-cape-d-ombre",
+   472→        nameJp: "影のマント",
+   473→        nameFr: "Cape d'Ombre",
+   474→        subtitle: "Fusion avec les ténèbres",
+   475→        rank: "B",
+   476→        classification: "Fondamentale",
+   477→        nature: "Innée",
+   478→        vecteur: "Ombre",
+   479→        portee: "Soi-même",
+   480→        techniqueParente: "—",
+   481→        techniqueDerivee: "Téléportation Sombre",
+   482→        vueEnsemble: "La Cape d'Ombre permet au Vampire de se fondre dans les ombres environnantes, devenant virtuellement invisible et intangible pendant une courte durée. C'est la capacité de furtivité signature du lignage.",
+   483→        effets: [
+   484→          "Invisibilité totale dans les zones d'ombre pendant 10 secondes",
+   485→          "Intangibilité partielle — les attaques physiques traversent le corps",
+   486→          "Déplacement silencieux et sans trace",
+   487→        ],
+   488→        fonctionnement: [
+   489→          "Le Vampire absorbe les ombres environnantes dans son manteau de Vitæ",
+   490→          "Son corps se densifie en une forme ombrale semi-immatérielle",
+   491→          "L'état se maintient tant que le Vampire reste dans une zone d'ombre suffisante",
+   492→        ],
+   493→        faiblesses: [
+   494→          "Annulé par la lumière directe et intense",
+   495→          "Les attaques énergétiques restent efficaces",
+   496→          "Le Vampire ne peut pas attaquer pendant la fusion ombrale",
+   497→        ],
+   498→      },
+   499→    ],
+   500→    icon: "/icone-vampire.png",
+   501→  },
+   502→  {
+   503→    id: "dragons",
+   504→    name: "Dragons",
+   505→    nameJp: "ドラゴン",
+   506→    subtitle: "Les descendants des Primordiaux",
+   507→    description: "Les Dragons d'Ascension sont les héritiers directs des Dragons Primordiaux qui façonnèrent le monde à l'aube des temps. Bien que diminués par rapport à leurs ancêtres cosmiques, ils restent les êtres les plus puissants du monde matériel — capables de réduire des cités entières en cendres d'un seul souffle.",
+   508→    lore: "Les Dragons Primordiaux — créateurs du monde selon le Codex Cosmologique — engendrèrent les races draconiques il y a des éons. Les Dragons modernes ne sont que des échos de cette puissance originelle, mais un écho suffisamment puissant pour dominer les cieux et terroriser les nations.",
+   509→    characteristics: [
+   510→      "Souffle élémentaire — attaque devastatrice selon l'affinité (feu, glace, foudre, etc.)",
+   511→      "Écailles renforcées — armure naturelle parmi les plus résistantes",
+   512→      "Vol supersonique — vitesse en vol inégalée par toute autre race",
+   513→      "Héritage primordial — accès partiel aux mémoires des Dragons Primordiaux",
+   514→    ],
+   515→    colors: {
+   516→      primary: "#CC5500",
+   517→      secondary: "#CD7F32",
+   518→      bg: "rgba(204,85,0,0.08)",
+   519→      text: "#F0C090",
+   520→      textLight: "#8B3A00",
+   521→      glow: "rgba(204,85,0,0.4)",
+   522→    },
+   523→    dayColors: {
+   524→      primary: "#8B3A00",
+   525→      secondary: "#CC5500",
+   526→      bg: "rgba(204,85,0,0.06)",
+   527→      text: "#5C2600",
+   528→      glow: "rgba(139,58,0,0.3)",
+   529→    },
+   530→    ranks: RANKS,
+   531→    techniques: [
+   532→      {
+   533→        id: "dragon-souffle-primordial",
+   534→        nameJp: "原初の息吹",
+   535→        nameFr: "Souffle Primordial",
+   536→        subtitle: "L'héritage du créateur du monde",
+   537→        rank: "S",
+   538→        classification: "Unique",
+   539→        nature: "Innée",
+   540→        vecteur: "Élément (Feu)",
+   541→        portee: "Cône (100m)",
+   542→        techniqueParente: "—",
+   543→        techniqueDerivee: "—",
+   544→        vueEnsemble: "Le Souffle Primordial est la technique la plus destructrice accessible à un Dragon. En canalisant l'héritage de ses ancêtres Primordiaux, le Dragon libère un torrent élémentaire d'une puissance capable de réduire une forêt entière en cendres.",
+   545→        effets: [
+   546→          "Cône de flamme de 100m de portée, 30m de large à l'extrémité",
+   547→          "Température suffisante pour fondre le métal et la pierre",
+   548→          "Zone de brûlure résiduelle persistant pendant 1 minute",
+   549→        ],
+   550→        fonctionnement: [
+   551→          "Le Dragon accumule son énergie élémentaire dans sa gorge pendant 3 secondes",
+   552→          "L'énergie se mélange à son souffle physique, créant un plasma élémentaire",
+   553→          "Le souffle est libéré en un jet continu de 5 secondes",
+   554→        ],
+   555→        faiblesses: [
+   556→          "Temps de préparation de 3 secondes pendant lequel le Dragon est vulnérable",
+   557→          "Épuisement sévère après utilisation — 10 minutes de récupération minimum",
+   558→          "Directionnel — ne peut pas changer de direction une fois lancé",
+   559→        ],
+   560→      },
+   561→    ],
+   562→    icon: "/icone-dragon.png",
+   563→  },
+   564→  {
+   565→    id: "fees",
+   566→    name: "Fées",
+   567→    nameJp: "妖精",
+   568→    subtitle: "Les esprits de l'éther lumineux",
+   569→    description: "Les Fées sont les êtres les plus mystérieux et les plus insaisissables d'Ascension. Nées de la condensation de l'Énergie Potentielle pure, elles ne possèdent pas de corps matériel fixe — leur forme est une projection de leur volonté sur le tissu de la réalité.",
+   570→    lore: "Les Fées n'ont pas de civilisation au sens traditionnel. Elles existent dans les interstices entre les plans, les lieux où l'Énergie Potentielle est la plus dense. Les mortels ne les rencontrent que dans des moments de grâce — lever de lune, aube rosée, crépuscule d'orage.",
+   571→    characteristics: [
+   572→      "Immatérialité — forme changeante, pas de corps fixe",
+   573→      "Illusion majeure — manipulation de la perception et de la réalité locale",
+   574→      "Lumière éthérée — capacité de guérison et de purification",
+   575→      "Métamorphose — adaptation de la forme à toute situation",
+   576→    ],
+   577→    colors: {
+   578→      primary: "#E879A8",
+   579→      secondary: "#F0D0FF",
+   580→      bg: "rgba(232,121,168,0.08)",
+   581→      text: "#F0D0E8",
+   582→      textLight: "#9B4D6E",
+   583→      glow: "rgba(232,121,168,0.4)",
+   584→    },
+   585→    dayColors: {
+   586→      primary: "#9B4D6E",
+   587→      secondary: "#E879A8",
+   588→      bg: "rgba(232,121,168,0.06)",
+   589→      text: "#6B3550",
+   590→      glow: "rgba(155,77,110,0.3)",
+   591→    },
+   592→    ranks: RANKS,
+   593→    techniques: [
+   594→      {
+   595→        id: "fee-miroir-ethere",
+   596→        nameJp: "エーテルミラー",
+   597→        nameFr: "Miroir Éthéré",
+   598→        subtitle: "Réflexion de la réalité déformée",
+   599→        rank: "A",
+   600→        classification: "Unique",
+   601→        nature: "Innée",
+   602→        vecteur: "Éther",
+   603→        portee: "Zone (40m)",
+   604→        techniqueParente: "—",
+   605→        techniqueDerivee: "Miroir Brisé — Fragmentation",
+   606→        vueEnsemble: "Le Miroir Éthéré est la capacité de manipulation de la réalité signature des Fées. En créant une surface réfléchissante d'énergie pure, la Fée peut dupliquer, inverser ou déformer la réalité dans un rayon de 40 mètres.",
+   607→        effets: [
+   608→          "Création d'illusions parfaites indiscernables de la réalité",
+   609→          "Inversion de la gravité locale dans la zone d'effet",
+   610→          "Création de clones éthérés capables d'interagir partiellement",
+   611→        ],
+   612→        fonctionnement: [
+   613→          "La Fée condense l'énergie ambiante en une surface plane et réfléchissante",
+   614→          "En regardant dans le miroir, elle choisit quelle réalité altérer",
+   615→          "La déformation se propage depuis le miroir dans un rayon de 40m",
+   616→        ],
+   617→        faiblesses: [
+   618→          "Le miroir peut être brisé par une attaque suffisamment puissante",
+   619→          "Les effets disparaissent immédiatement si la Fée perd concentration",
+   620→          "Ne fonctionne pas dans les zones de nullité énergétique",
+   621→        ],
+   622→      },
+   623→    ],
+   624→    icon: "/icone-fee.png",
+   625→  },
+   626→];
+   627→
+   628→export function getRaceById(id: string): RaceData | undefined {
+   629→  return RACE_DATA.find((r) => r.id === id);
+   630→}
+   631→
+   632→export function getTechniqueByRaceAndId(raceId: string, techniqueId: string): RaceTechnique | undefined {
+   633→  const race = getRaceById(raceId);
+   634→  return race?.techniques.find((t) => t.id === techniqueId);
+   635→}

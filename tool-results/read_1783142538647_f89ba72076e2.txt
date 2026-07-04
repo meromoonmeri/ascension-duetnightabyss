@@ -1,0 +1,852 @@
+     1→"use client";
+     2→
+     3→import { useEffect, useRef, useState, useCallback } from "react";
+     4→import { useNavigation, type PageType } from "@/store/navigationStore";
+     5→import { useSession, signIn } from "next-auth/react";
+     6→import gsap from "gsap";
+     7→
+     8→/* ═══════════════════════════════════════════════════════════════════
+     9→   DNA-STYLE CINEMATIC HOMEPAGE — Single Viewport (100vh)
+    10→   Duet Night Abyss Visual Clone for Ascension Wiki
+    11→   ═══════════════════════════════════════════════════════════════════ */
+    12→
+    13→/* ─── Navigation Items ──────────────────────────────────────── */
+    14→interface NavDef {
+    15→  label: string;
+    16→  sublabel: string;
+    17→  page: PageType;
+    18→}
+    19→
+    20→const NAV_ITEMS: NavDef[] = [
+    21→  { label: "ACCUEIL", sublabel: "home", page: "home" },
+    22→  { label: "LE MONDE", sublabel: "the world", page: "geography" },
+    23→  { label: "EXPLORER", sublabel: "characters and weapons", page: "races" },
+    24→  { label: "NEWS", sublabel: "news", page: "news" },
+    25→];
+    26→
+    27→/* ─── Social Links ──────────────────────────────────────────── */
+    28→const SOCIAL_LINKS = [
+    29→  { name: "Discord", icon: "/dna-assets/imgs/icon/share-discord.png", href: "https://discord.gg" },
+    30→  { name: "X", icon: "/dna-assets/imgs/icon/share-x.png", href: "https://x.com" },
+    31→  { name: "YouTube", icon: "/dna-assets/imgs/icon/share-youtube.png", href: "https://youtube.com" },
+    32→];
+    33→
+    34→/* ─── Gold Text CSS ─────────────────────────────────────────── */
+    35→const goldTextStyle: React.CSSProperties = {
+    36→  backgroundImage: "url('/dna-assets/imgs/bg/text-black.png')",
+    37→  backgroundSize: "100% 100%",
+    38→  WebkitBackgroundClip: "text",
+    39→  WebkitTextFillColor: "transparent",
+    40→  backgroundClip: "text",
+    41→  color: "transparent",
+    42→};
+    43→
+    44→/* ═══════════════════════════════════════════════════════════════════
+    45→   MAIN COMPONENT
+    46→   ═══════════════════════════════════════════════════════════════════ */
+    47→export default function HomePage() {
+    48→  const { navigate, currentPage, preloaderComplete } = useNavigation();
+    49→  const { data: session, signOut } = useSession();
+    50→  const videoRef = useRef<HTMLVideoElement>(null);
+    51→  const containerRef = useRef<HTMLDivElement>(null);
+    52→  const [hoveredNav, setHoveredNav] = useState<string | null>(null);
+    53→  const [hoveredPlay, setHoveredPlay] = useState(false);
+    54→  const [hoveredBtn1, setHoveredBtn1] = useState(false);
+    55→  const [hoveredBtn2, setHoveredBtn2] = useState(false);
+    56→  const [hoveredSteam, setHoveredSteam] = useState(false);
+    57→  const [hoveredSocial, setHoveredSocial] = useState<string | null>(null);
+    58→  const [videoLoaded, setVideoLoaded] = useState(false);
+    59→  const [isMobile, setIsMobile] = useState(false);
+    60→
+    61→  /* ─── Detect mobile ───────────────────────────────────────── */
+    62→  useEffect(() => {
+    63→    const check = () => setIsMobile(window.innerWidth < 768);
+    64→    check();
+    65→    window.addEventListener("resize", check);
+    66→    return () => window.removeEventListener("resize", check);
+    67→  }, []);
+    68→
+    69→  /* ─── Video muted autoplay ────────────────────────────────── */
+    70→  useEffect(() => {
+    71→    const vid = videoRef.current;
+    72→    if (!vid) return;
+    73→    vid.muted = true;
+    74→    vid.playsInline = true;
+    75→    vid.loop = true;
+    76→    vid.play().catch(() => {
+    77→      // Autoplay blocked — show poster fallback
+    78→    });
+    79→  }, []);
+    80→
+    81→  /* ─── Entrance animation ──────────────────────────────────── */
+    82→  useEffect(() => {
+    83→    if (!preloaderComplete || !containerRef.current) return;
+    84→
+    85→    const ctx = gsap.context(() => {
+    86→      const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+    87→
+    88→      tl.fromTo(
+    89→        ".dna-nav-left-icons > *",
+    90→        { opacity: 0, x: -20 },
+    91→        { opacity: 1, x: 0, stagger: 0.1, duration: 0.6 },
+    92→        0.2
+    93→      );
+    94→
+    95→      tl.fromTo(
+    96→        ".dna-nav-item",
+    97→        { opacity: 0, x: -30, skewX: 3 },
+    98→        { opacity: 1, x: 0, skewX: 0, stagger: 0.12, duration: 0.7 },
+    99→        0.4
+   100→      );
+   101→
+   102→      tl.fromTo(
+   103→        ".dna-logo",
+   104→        { opacity: 0, y: -20, scale: 0.9 },
+   105→        { opacity: 1, y: 0, scale: 1, duration: 0.8 },
+   106→        0.6
+   107→      );
+   108→
+   109→      tl.fromTo(
+   110→        ".dna-play-btn",
+   111→        { opacity: 0, scale: 0.5, rotation: -90 },
+   112→        { opacity: 1, scale: 1, rotation: 0, duration: 0.7, ease: "back.out(1.7)" },
+   113→        0.9
+   114→      );
+   115→
+   116→      tl.fromTo(
+   117→        ".dna-title-text",
+   118→        { opacity: 0, y: 15 },
+   119→        { opacity: 1, y: 0, duration: 0.6 },
+   120→        1.1
+   121→      );
+   122→
+   123→      tl.fromTo(
+   124→        ".dna-bottom-btn",
+   125→        { opacity: 0, y: 20 },
+   126→        { opacity: 1, y: 0, stagger: 0.1, duration: 0.5 },
+   127→        1.3
+   128→      );
+   129→
+   130→      tl.fromTo(
+   131→        ".dna-social-icon",
+   132→        { opacity: 0, x: -15 },
+   133→        { opacity: 1, x: 0, stagger: 0.08, duration: 0.4 },
+   134→        1.4
+   135→      );
+   136→
+   137→      tl.fromTo(
+   138→        ".dna-news-card",
+   139→        { opacity: 0, x: 20 },
+   140→        { opacity: 1, x: 0, duration: 0.6 },
+   141→        1.5
+   142→      );
+   143→    }, containerRef);
+   144→
+   145→    return () => ctx.revert();
+   146→  }, [preloaderComplete]);
+   147→
+   148→  /* ─── Nav click handler ───────────────────────────────────── */
+   149→  const handleNavClick = useCallback(
+   150→    (page: PageType) => {
+   151→      navigate(page);
+   152→    },
+   153→    [navigate]
+   154→  );
+   155→
+   156→  /* ─── Sign out handler ────────────────────────────────────── */
+   157→  const handleSignOut = useCallback(() => {
+   158→    signOut({ callbackUrl: "/" });
+   159→  }, [signOut]);
+   160→
+   161→  /* ─── Active state (ACCUEIL is always active on home) ─────── */
+   162→  const isActive = (label: string) =>
+   163→    label === "ACCUEIL" || hoveredNav === label;
+   164→
+   165→  /* ═══════════════════════════════════════════════════════════════════
+   166→     MOBILE VERSION — Simplified
+   167→     ═══════════════════════════════════════════════════════════════════ */
+   168→  if (isMobile) {
+   169→    return (
+   170→      <div
+   171→        ref={containerRef}
+   172→        className="relative w-full h-screen overflow-hidden bg-black"
+   173→        style={{ fontFamily: "'Gloock', serif" }}
+   174→      >
+   175→        {/* Background */}
+   176→        <video
+   177→          ref={videoRef}
+   178→          autoPlay
+   179→          muted
+   180→          loop
+   181→          playsInline
+   182→          poster="/dna-assets/imgs/home/pc/bg.webp"
+   183→          className="absolute inset-0 w-full h-full object-cover"
+   184→          preload="auto"
+   185→        >
+   186→          <source src="/hero-bg.mp4" type="video/mp4" />
+   187→        </video>
+   188→
+   189→        {/* Top gradient overlay */}
+   190→        <div
+   191→          className="absolute top-0 left-0 w-full h-[180px] object-cover pointer-events-none"
+   192→          style={{
+   193→            background:
+   194→              "linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%)",
+   195→          }}
+   196→        />
+   197→
+   198→        {/* Bottom overlay */}
+   199→        <img
+   200→          src="/dna-assets/imgs/home/pc/bg-bottom.png"
+   201→          alt=""
+   202→          className="absolute bottom-0 left-0 w-full h-[60%] object-cover pointer-events-none"
+   203→          style={{ objectPosition: "bottom" }}
+   204→        />
+   205→
+   206→        {/* Logo — centered top */}
+   207→        <div className="dna-logo absolute top-4 left-1/2 -translate-x-1/2 z-10">
+   208→          <img
+   209→            src="/logo.png"
+   210→            alt="Ascension Logo"
+   211→            width={160}
+   212→            height={78}
+   213→            className="object-contain"
+   214→          />
+   215→        </div>
+   216→
+   217→        {/* Center content */}
+   218→        <div className="absolute inset-0 flex flex-col items-center justify-center z-10 px-6">
+   219→          {/* Play button */}
+   220→          <button
+   221→            className="dna-play-btn w-16 h-16 flex-shrink-0 cursor-pointer"
+   222→            onMouseEnter={() => setHoveredPlay(true)}
+   223→            onMouseLeave={() => setHoveredPlay(false)}
+   224→            aria-label="Play trailer"
+   225→          >
+   226→            <img
+   227→              src={
+   228→                hoveredPlay
+   229→                  ? "/dna-assets/imgs/home/pc/play-hover.png"
+   230→                  : "/dna-assets/imgs/home/pc/play.png"
+   231→              }
+   232→              alt="Play"
+   233→              width={64}
+   234→              height={64}
+   235→              className="w-full h-full object-contain"
+   236→            />
+   237→          </button>
+   238→
+   239→          {/* Title with star */}
+   240→          <div className="dna-title-text flex items-center gap-2 mt-6">
+   241→            <span
+   242→              className="text-base tracking-wider"
+   243→              style={{
+   244→                fontFamily: "'Gloock', serif",
+   245→                color: "#E0DABB",
+   246→              }}
+   247→            >
+   248→              ASCENSION
+   249→            </span>
+   250→            <img
+   251→              src="/dna-assets/imgs/home/pc/title-star.png"
+   252→              alt="★"
+   253→              width={20}
+   254→              height={20}
+   255→              className="object-contain"
+   256→            />
+   257→            <span
+   258→              className="text-base tracking-wider"
+   259→              style={{
+   260→                fontFamily: "'Gloock', serif",
+   261→                color: "#E0DABB",
+   262→              }}
+   263→            >
+   264→              KAKUSEI
+   265→            </span>
+   266→          </div>
+   267→        </div>
+   268→
+   269→        {/* Bottom nav — simplified horizontal */}
+   270→        <div className="absolute bottom-8 left-0 right-0 z-10 flex flex-col items-center gap-4 px-4">
+   271→          {/* Action buttons */}
+   272→          <div className="flex items-center gap-3">
+   273→            <a
+   274→              href="https://discord.gg"
+   275→              target="_blank"
+   276→              rel="noopener noreferrer"
+   277→              className="dna-bottom-btn relative w-[180px] h-[48px] flex items-center justify-center cursor-pointer"
+   278→            >
+   279→              <img
+   280→                src="/dna-assets/imgs/home/pc/btn.png"
+   281→                alt=""
+   282→                className="absolute inset-0 w-full h-full object-contain"
+   283→              />
+   284→              <span
+   285→                className="relative z-10 text-xs tracking-wider"
+   286→                style={{
+   287→                  fontFamily: "'Gloock', serif",
+   288→                  color: "#C1B8A2",
+   289→                }}
+   290→              >
+   291→                DISCORD
+   292→              </span>
+   293→            </a>
+   294→            <button
+   295→              onClick={() => navigate("geography")}
+   296→              className="dna-bottom-btn relative w-[180px] h-[48px] flex items-center justify-center cursor-pointer"
+   297→            >
+   298→              <img
+   299→                src="/dna-assets/imgs/home/pc/btn.png"
+   300→                alt=""
+   301→                className="absolute inset-0 w-full h-full object-contain"
+   302→              />
+   303→              <span
+   304→                className="relative z-10 text-xs tracking-wider"
+   305→                style={{
+   306→                  fontFamily: "'Gloock', serif",
+   307→                  color: "#C1B8A2",
+   308→                }}
+   309→              >
+   310→                EXPLORER
+   311→              </span>
+   312→            </button>
+   313→          </div>
+   314→
+   315→          {/* Social icons */}
+   316→          <div className="flex items-center gap-5">
+   317→            {SOCIAL_LINKS.map((s) => (
+   318→              <a
+   319→                key={s.name}
+   320→                href={s.href}
+   321→                target="_blank"
+   322→                rel="noopener noreferrer"
+   323→                className="transition-opacity duration-200"
+   324→                style={{ opacity: hoveredSocial === s.name ? 0.8 : 1 }}
+   325→                onMouseEnter={() => setHoveredSocial(s.name)}
+   326→                onMouseLeave={() => setHoveredSocial(null)}
+   327→                aria-label={s.name}
+   328→              >
+   329→                <img
+   330→                  src={s.icon}
+   331→                  alt={s.name}
+   332→                  width={24}
+   333→                  height={24}
+   334→                  className="object-contain"
+   335→                />
+   336→              </a>
+   337→            ))}
+   338→          </div>
+   339→
+   340→          {/* User login / session */}
+   341→          {session?.user ? (
+   342→            <button
+   343→              onClick={handleSignOut}
+   344→              className="text-[10px] tracking-wider transition-colors cursor-pointer"
+   345→              style={{
+   346→                fontFamily: "'WorldText', sans-serif",
+   347→                color: "rgba(255,255,255,0.4)",
+   348→              }}
+   349→            >
+   350→              DÉCONNEXION
+   351→            </button>
+   352→          ) : (
+   353→            <button
+   354→              onClick={() => signIn("discord")}
+   355→              className="text-[10px] tracking-wider transition-colors cursor-pointer"
+   356→              style={{
+   357→                fontFamily: "'WorldText', sans-serif",
+   358→                color: "rgba(255,255,255,0.4)",
+   359→              }}
+   360→            >
+   361→              CONNEXION
+   362→            </button>
+   363→          )}
+   364→        </div>
+   365→      </div>
+   366→    );
+   367→  }
+   368→
+   369→  /* ═══════════════════════════════════════════════════════════════════
+   370→     DESKTOP VERSION — Full DNA Cinematic Layout
+   371→     ═══════════════════════════════════════════════════════════════════ */
+   372→  return (
+   373→    <div
+   374→      ref={containerRef}
+   375→      className="relative w-full h-screen overflow-hidden bg-black select-none"
+   376→      style={{ fontFamily: "'Gloock', serif" }}
+   377→    >
+   378→      {/* ═══ BACKGROUND LAYER ═════════════════════════════════════ */}
+   379→      {/* Hero video */}
+   380→      <video
+   381→        ref={videoRef}
+   382→        autoPlay
+   383→        muted
+   384→        loop
+   385→        playsInline
+   386→        poster="/dna-assets/imgs/home/pc/bg.webp"
+   387→        className="absolute inset-0 w-full h-full object-cover"
+   388→        preload="auto"
+   389→        onCanPlay={() => setVideoLoaded(true)}
+   390→      >
+   391→        <source src="/hero-bg.mp4" type="video/mp4" />
+   392→      </video>
+   393→
+   394→      {/* Top gradient overlay */}
+   395→      <img
+   396→        src="/dna-assets/imgs/bg/pc/bg-top.png"
+   397→        alt=""
+   398→        className="absolute top-0 left-0 w-full pointer-events-none"
+   399→        style={{ height: "275px", objectFit: "cover" }}
+   400→      />
+   401→
+   402→      {/* Bottom scene overlay */}
+   403→      <img
+   404→        src="/dna-assets/imgs/home/pc/bg-bottom.png"
+   405→        alt=""
+   406→        className="absolute bottom-0 left-0 w-full pointer-events-none"
+   407→        style={{ height: "862px", objectFit: "cover" }}
+   408→      />
+   409→
+   410→      {/* ═══ NAVIGATION — LEFT SIDE ══════════════════════════════ */}
+   411→      <nav
+   412→        className="absolute top-0 left-[60px] z-10 flex items-start"
+   413→        style={{ height: "100vh", paddingTop: "40px" }}
+   414→        role="navigation"
+   415→        aria-label="Main navigation"
+   416→      >
+   417→        {/* Left icons — vertical stack */}
+   418→        <div
+   419→          className="dna-nav-left-icons flex flex-col items-center gap-[35px] mr-[24px] flex-shrink-0"
+   420→          style={{ paddingTop: "4px" }}
+   421→        >
+   422→          {/* User icon */}
+   423→          {session?.user ? (
+   424→            <button
+   425→              onClick={handleSignOut}
+   426→              className="cursor-pointer transition-opacity duration-200 hover:opacity-70"
+   427→              title="Se déconnecter"
+   428→              aria-label="Se déconnecter"
+   429→            >
+   430→              <img
+   431→                src="/dna-assets/imgs/icon/user.png"
+   432→                alt="Déconnexion"
+   433→                width={22}
+   434→                height={21}
+   435→                className="object-contain"
+   436→                style={{
+   437→                  filter: "brightness(0) invert(1) brightness(0.8)",
+   438→                }}
+   439→              />
+   440→            </button>
+   441→          ) : (
+   442→            <button
+   443→              onClick={() => signIn("discord")}
+   444→              className="cursor-pointer transition-opacity duration-200 hover:opacity-70"
+   445→              title="Se connecter"
+   446→              aria-label="Se connecter"
+   447→            >
+   448→              <img
+   449→                src="/dna-assets/imgs/icon/user.png"
+   450→                alt="Connexion"
+   451→                width={22}
+   452→                height={21}
+   453→                className="object-contain"
+   454→                style={{
+   455→                  filter: "brightness(0) invert(1) brightness(0.8)",
+   456→                }}
+   457→              />
+   458→            </button>
+   459→          )}
+   460→
+   461→          {/* Music icon */}
+   462→          <button
+   463→            className="cursor-pointer transition-opacity duration-200 hover:opacity-70"
+   464→            title="Musique"
+   465→            aria-label="Musique"
+   466→          >
+   467→            <img
+   468→              src="/dna-assets/imgs/icon/music-on.png"
+   469→              alt="Musique"
+   470→              width={21}
+   471→              height={26}
+   472→              className="object-contain"
+   473→              style={{
+   474→                filter: "brightness(0) invert(1) brightness(0.8)",
+   475→              }}
+   476→            />
+   477→          </button>
+   478→
+   479→          {/* Language/Globe icon */}
+   480→          <button
+   481→            className="cursor-pointer transition-opacity duration-200 hover:opacity-70"
+   482→            title="Langue"
+   483→            aria-label="Langue"
+   484→          >
+   485→            <img
+   486→              src="/dna-assets/imgs/icon/world.png"
+   487→              alt="Langue"
+   488→              width={24}
+   489→              height={24}
+   490→              className="object-contain"
+   491→              style={{
+   492→                filter: "brightness(0) invert(1) brightness(0.8)",
+   493→              }}
+   494→            />
+   495→          </button>
+   496→        </div>
+   497→
+   498→        {/* Nav items — vertical columns */}
+   499→        <div
+   500→          className="flex flex-col"
+   501→          style={{
+   502→            gap: "calc(100vw * 0.5)",
+   503→            paddingTop: "0px",
+   504→          }}
+   505→        >
+   506→          {NAV_ITEMS.map((item) => {
+   507→            const active = isActive(item.label);
+   508→            return (
+   509→              <button
+   510→                key={item.label}
+   511→                className={`dna-nav-item flex flex-col items-start cursor-pointer transition-all duration-200 outline-none ${
+   512→                  active ? "" : "hover:opacity-100"
+   513→                }`}
+   514→                style={{ opacity: active ? 1 : 0.5 }}
+   515→                onClick={() => handleNavClick(item.page)}
+   516→                onMouseEnter={() => setHoveredNav(item.label)}
+   517→                onMouseLeave={() => setHoveredNav(null)}
+   518→                aria-label={item.label}
+   519→                aria-current={item.label === "ACCUEIL" ? "page" : undefined}
+   520→              >
+   521→                {/* Main label */}
+   522→                <span
+   523→                  className="text-[22px] tracking-normal leading-tight"
+   524→                  style={{
+   525→                    fontFamily: "'Gloock', serif",
+   526→                    ...(active ? goldTextStyle : { color: "rgba(255,255,255,0.5)" }),
+   527→                  }}
+   528→                >
+   529→                  {item.label}
+   530→                </span>
+   531→                {/* Sub-label */}
+   532→                <span
+   533→                  className="text-[9px] tracking-[1px] leading-tight mt-[2px] uppercase"
+   534→                  style={{
+   535→                    fontFamily: "'WorldText', sans-serif",
+   536→                    color: "rgb(115,115,115)",
+   537→                  }}
+   538→                >
+   539→                  {item.sublabel}
+   540→                </span>
+   541→              </button>
+   542→            );
+   543→          })}
+   544→        </div>
+   545→      </nav>
+   546→
+   547→      {/* ═══ LOGO — TOP RIGHT ═══════════════════════════════════ */}
+   548→      <div className="dna-logo absolute top-[20px] right-[31px] z-[5]">
+   549→        <img
+   550→          src="/logo.png"
+   551→          alt="Ascension — Kakusei"
+   552→          width={268}
+   553→          height={130}
+   554→          className="object-contain"
+   555→          draggable={false}
+   556→        />
+   557→      </div>
+   558→
+   559→      {/* ═══ PLAY BUTTON — CENTER, BOTTOM AREA ══════════════════ */}
+   560→      <div
+   561→        className="absolute left-1/2 -translate-x-1/2 z-[5] dna-play-btn"
+   562→        style={{ bottom: "414px" }}
+   563→      >
+   564→        <button
+   565→          className="cursor-pointer transition-transform duration-200 hover:scale-105 active:scale-95"
+   566→          onMouseEnter={() => setHoveredPlay(true)}
+   567→          onMouseLeave={() => setHoveredPlay(false)}
+   568→          aria-label="Lire la bande-annonce"
+   569→        >
+   570→          <img
+   571→            src={
+   572→              hoveredPlay
+   573→                ? "/dna-assets/imgs/home/pc/play-hover.png"
+   574→                : "/dna-assets/imgs/home/pc/play.png"
+   575→            }
+   576→            alt="Play"
+   577→            width={86}
+   578→            height={86}
+   579→            className="object-contain"
+   580→            draggable={false}
+   581→          />
+   582→        </button>
+   583→      </div>
+   584→
+   585→      {/* ═══ VERSION / ANNOUNCEMENT TEXT ════════════════════════ */}
+   586→      <div
+   587→        className="dna-title-text absolute left-1/2 -translate-x-1/2 z-[5] flex items-center gap-3 whitespace-nowrap"
+   588→        style={{ bottom: "841px" }}
+   589→      >
+   590→        <span
+   591→          className="text-[29px] tracking-[1px] leading-none"
+   592→          style={{
+   593→            fontFamily: "'Gloock', serif",
+   594→            color: "#E0DABB",
+   595→          }}
+   596→        >
+   597→          ASCENSION
+   598→        </span>
+   599→        <img
+   600→          src="/dna-assets/imgs/home/pc/title-star.png"
+   601→          alt="★"
+   602→          width={28}
+   603→          height={28}
+   604→          className="object-contain flex-shrink-0"
+   605→          draggable={false}
+   606→        />
+   607→        <span
+   608→          className="text-[29px] tracking-[1px] leading-none"
+   609→          style={{
+   610→            fontFamily: "'Gloock', serif",
+   611→            color: "#E0DABB",
+   612→          }}
+   613→        >
+   614→          KAKUSEI
+   615→        </span>
+   616→      </div>
+   617→
+   618→      {/* ═══ DOWNLOAD / ACTION BUTTONS ═════════════════════════ */}
+   619→      <div
+   620→        className="dna-bottom-btn absolute left-1/2 -translate-x-1/2 z-[2] flex items-center gap-[10px]"
+   621→        style={{ bottom: "884px" }}
+   622→      >
+   623→        {/* Discord button */}
+   624→        <a
+   625→          href="https://discord.gg"
+   626→          target="_blank"
+   627→          rel="noopener noreferrer"
+   628→          className="relative flex items-center justify-center cursor-pointer transition-transform duration-200 hover:scale-105 active:scale-95"
+   629→          style={{ width: "243px", height: "65px" }}
+   630→          onMouseEnter={() => setHoveredBtn1(true)}
+   631→          onMouseLeave={() => setHoveredBtn1(false)}
+   632→          aria-label="Rejoindre le serveur Discord"
+   633→        >
+   634→          <img
+   635→            src={
+   636→              hoveredBtn1
+   637→                ? "/dna-assets/imgs/home/pc/btn-hover.png"
+   638→                : "/dna-assets/imgs/home/pc/btn.png"
+   639→            }
+   640→            alt=""
+   641→            className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+   642→            draggable={false}
+   643→          />
+   644→          <div className="relative z-10 flex flex-col items-center gap-[2px]">
+   645→            <img
+   646→              src="/dna-assets/imgs/icon/share-discord.png"
+   647→              alt=""
+   648→              width={18}
+   649→              height={18}
+   650→              className="object-contain mb-[2px]"
+   651→              style={{ opacity: 0.6 }}
+   652→              draggable={false}
+   653→            />
+   654→            <span
+   655→              className="text-[19px] tracking-[1px] leading-none"
+   656→              style={{
+   657→                fontFamily: "'Gloock', serif",
+   658→                color: "#C1B8A2",
+   659→              }}
+   660→            >
+   661→              REJOINDRE LE SERVEUR
+   662→            </span>
+   663→          </div>
+   664→        </a>
+   665→
+   666→        {/* Explorer l'Univers button */}
+   667→        <button
+   668→          onClick={() => navigate("geography")}
+   669→          className="relative flex items-center justify-center cursor-pointer transition-transform duration-200 hover:scale-105 active:scale-95"
+   670→          style={{ width: "243px", height: "65px" }}
+   671→          onMouseEnter={() => setHoveredBtn2(true)}
+   672→          onMouseLeave={() => setHoveredBtn2(false)}
+   673→          aria-label="Explorer l'univers"
+   674→        >
+   675→          <img
+   676→            src={
+   677→              hoveredBtn2
+   678→                ? "/dna-assets/imgs/home/pc/btn-hover.png"
+   679→                : "/dna-assets/imgs/home/pc/btn.png"
+   680→            }
+   681→            alt=""
+   682→            className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+   683→            draggable={false}
+   684→          />
+   685→          <div className="relative z-10 flex flex-col items-center">
+   686→            <span
+   687→              className="text-[19px] tracking-[1px] leading-none"
+   688→              style={{
+   689→                fontFamily: "'Gloock', serif",
+   690→                color: "#C1B8A2",
+   691→              }}
+   692→            >
+   693→              EXPLORER L&apos;UNIVERS
+   694→            </span>
+   695→          </div>
+   696→        </button>
+   697→
+   698→        {/* Steam / PC button */}
+   699→        <a
+   700→          href="https://store.steampowered.com"
+   701→          target="_blank"
+   702→          rel="noopener noreferrer"
+   703→          className="relative flex items-center justify-center cursor-pointer transition-transform duration-200 hover:scale-105 active:scale-95"
+   704→          style={{ width: "140px", height: "140px" }}
+   705→          onMouseEnter={() => setHoveredSteam(true)}
+   706→          onMouseLeave={() => setHoveredSteam(false)}
+   707→          aria-label="Steam"
+   708→        >
+   709→          <img
+   710→            src={
+   711→              hoveredSteam
+   712→                ? "/dna-assets/imgs/home/pc/btn-pc-hover.png"
+   713→                : "/dna-assets/imgs/home/pc/btn-pc.png"
+   714→            }
+   715→            alt="Steam"
+   716→            className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+   717→            draggable={false}
+   718→          />
+   719→        </a>
+   720→      </div>
+   721→
+   722→      {/* ═══ SOCIAL ICONS — BOTTOM LEFT ═════════════════════════ */}
+   723→      <div
+   724→        className="dna-social-icon absolute left-[70px] z-[2] flex items-center gap-[20px]"
+   725→        style={{ bottom: "884px" }}
+   726→      >
+   727→        {SOCIAL_LINKS.map((s) => (
+   728→          <a
+   729→            key={s.name}
+   730→            href={s.href}
+   731→            target="_blank"
+   732→            rel="noopener noreferrer"
+   733→            className="transition-opacity duration-200 cursor-pointer"
+   734→            style={{ opacity: hoveredSocial === s.name ? 0.8 : 1 }}
+   735→            onMouseEnter={() => setHoveredSocial(s.name)}
+   736→            onMouseLeave={() => setHoveredSocial(null)}
+   737→            aria-label={s.name}
+   738→          >
+   739→            <img
+   740→              src={s.icon}
+   741→              alt={s.name}
+   742→              width={30}
+   743→              height={30}
+   744→              className="object-contain"
+   745→              draggable={false}
+   746→            />
+   747→          </a>
+   748→        ))}
+   749→      </div>
+   750→
+   751→      {/* ═══ NEWS POPUP — RIGHT SIDE ═══════════════════════════ */}
+   752→      <div
+   753→        className="dna-news-card absolute z-[5]"
+   754→        style={{ right: "60px", top: "290px" }}
+   755→      >
+   756→        <div
+   757→          className="flex items-start gap-3 p-4 rounded-sm cursor-pointer transition-all duration-200 hover:opacity-80"
+   758→          style={{
+   759→            background: "rgba(0,0,0,0.4)",
+   760→            backdropFilter: "blur(8px)",
+   761→            WebkitBackdropFilter: "blur(8px)",
+   762→            maxWidth: "240px",
+   763→          }}
+   764→          onClick={() => navigate("news")}
+   765→        >
+   766→          {/* Gold square decoration */}
+   767→          <img
+   768→            src="/dna-assets/imgs/home/news-square.png"
+   769→            alt=""
+   770→            width={10}
+   771→            height={10}
+   772→            className="object-contain flex-shrink-0 mt-[6px]"
+   773→            draggable={false}
+   774→          />
+   775→          <div className="flex flex-col gap-[6px]">
+   776→            <h3
+   777→              className="text-[18px] leading-tight"
+   778→              style={{
+   779→                fontFamily: "'WorldText', sans-serif",
+   780→                color: "#C1B8A2",
+   781→              }}
+   782→            >
+   783→              Dernières Nouvelles
+   784→            </h3>
+   785→            <p
+   786→              className="text-[11px] leading-relaxed"
+   787→              style={{
+   788→                fontFamily: "'WorldText', sans-serif",
+   789→                color: "rgba(193,184,162,0.5)",
+   790→              }}
+   791→            >
+   792→              Découvrez les dernières mises à jour de l&apos;univers Ascension
+   793→            </p>
+   794→            <div className="flex items-center gap-[6px] mt-1">
+   795→              <img
+   796→                src="/dna-assets/imgs/icon/share-x.png"
+   797→                alt=""
+   798→                width={12}
+   799→                height={12}
+   800→                className="object-contain opacity-40"
+   801→                draggable={false}
+   802→              />
+   803→              <span
+   804→                className="text-[10px] tracking-wider"
+   805→                style={{
+   806→                  fontFamily: "'WorldText', sans-serif",
+   807→                  color: "rgba(193,184,162,0.35)",
+   808→                }}
+   809→              >
+   810→                VOIR TOUTES LES NEWS →
+   811→              </span>
+   812→            </div>
+   813→          </div>
+   814→        </div>
+   815→      </div>
+   816→
+   817→      {/* ═══ SESSION INDICATOR (subtle) ════════════════════════ */}
+   818→      {session?.user && (
+   819→        <div
+   820→          className="absolute z-[6] flex items-center gap-2 px-3 py-1.5 rounded-full cursor-default"
+   821→          style={{
+   822→            bottom: "24px",
+   823→            right: "31px",
+   824→            background: "rgba(255,255,255,0.04)",
+   825→            backdropFilter: "blur(8px)",
+   826→            WebkitBackdropFilter: "blur(8px)",
+   827→            border: "1px solid rgba(255,255,255,0.06)",
+   828→          }}
+   829→        >
+   830→          {session.user.image && (
+   831→            <img
+   832→              src={session.user.image}
+   833→              alt=""
+   834→              width={18}
+   835→              height={18}
+   836→              className="rounded-full ring-1 ring-white/10"
+   837→            />
+   838→          )}
+   839→          <span
+   840→            className="text-[10px] tracking-wider max-w-[80px] truncate"
+   841→            style={{
+   842→              fontFamily: "'WorldText', sans-serif",
+   843→              color: "rgba(255,255,255,0.4)",
+   844→            }}
+   845→          >
+   846→            {session.user.name}
+   847→          </span>
+   848→        </div>
+   849→      )}
+   850→    </div>
+   851→  );
+   852→}

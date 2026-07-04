@@ -1,13 +1,9 @@
 "use client";
 
-import { Component, useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
+import { Component, useState, useEffect, useRef, lazy, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import gsap from "gsap";
 import { useNavigation, initUrlSync } from "@/store/navigationStore";
 import { useCms } from "@/store/cmsStore";
-import { useTheme } from "@/components/layout/ThemeProvider";
-import { useAudioNavigation } from "@/hooks/useAudioNavigation";
-import { playThemeToggle } from "@/lib/audioEngine";
 import { toast } from "sonner";
 import { useSession, signOut } from "next-auth/react";
 import { LogOut } from "lucide-react";
@@ -18,9 +14,8 @@ import Preloader from "@/components/layout/Preloader";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import SearchOverlay from "@/components/layout/SearchOverlay";
-import AudioControls from "@/components/layout/AudioControls";
-import GamePageShell from "@/components/layout/GamePageShell";
 import CMSToolbar from "@/components/cms/CMSToolbar";
+import GamePageShell from "@/components/layout/GamePageShell";
 
 // Core pages — loaded immediately (small, first-paint critical)
 import HomePage from "@/components/home/HomePage";
@@ -59,13 +54,25 @@ const GAME_PAGE_IDS = ["shop", "bank", "events", "quests", "profile"];
 // ─── Minimal page loader ────────────────────────────────────
 function PageLoader() {
   return (
-    <div className="flex items-center justify-center py-32">
-      <div className="flex flex-col items-center gap-3">
-        <div
-          className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin"
-          style={{ borderColor: "var(--gold)", borderTopColor: "transparent" }}
-        />
-        <span className="font-display text-xs tracking-[0.2em] text-txt-tertiary uppercase">Chargement…</span>
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: "50vh",
+      background: "#000",
+    }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
+        <div style={{
+          width: "20px",
+          height: "20px",
+          border: "2px solid #baae93",
+          borderTopColor: "transparent",
+          borderRadius: "50%",
+          animation: "spin 0.8s linear infinite",
+        }} />
+        <span className="font-worldtext" style={{ fontSize: "1.2rem", color: "rgba(255,255,255,0.3)", letterSpacing: "0.15rem" }}>
+          CHARGEMENT…
+        </span>
       </div>
     </div>
   );
@@ -97,21 +104,60 @@ class PageErrorBoundary extends Component<
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex min-h-[50vh] flex-col items-center justify-center px-6 text-center">
-          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-white/[0.04] border border-white/[0.08]">
-            <span className="text-3xl">⚠️</span>
+        <div style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "50vh",
+          padding: "24px",
+          textAlign: "center",
+          background: "#000",
+        }}>
+          <div style={{
+            marginBottom: "24px",
+            width: "80px",
+            height: "80px",
+            borderRadius: "50%",
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "2.4rem",
+          }}>
+            ⚠️
           </div>
-          <h2 className="mb-2 text-xl font-bold text-[#E5E7EB]">
+          <h2 className="font-worldtext" style={{
+            marginBottom: "8px",
+            fontSize: "1.8rem",
+            color: "#e0dabb",
+            letterSpacing: "0.05rem",
+          }}>
             Erreur de chargement
           </h2>
-          <p className="mb-2 max-w-md text-sm leading-relaxed text-[#9CA3AF]">
+          <p style={{
+            marginBottom: "16px",
+            maxWidth: "400px",
+            fontSize: "1.4rem",
+            lineHeight: 1.6,
+            color: "rgba(255,255,255,0.5)",
+          }}>
             {this.props.pageName
               ? `La page "${this.props.pageName}" a rencontré une erreur.`
-              : "Cette page a rencontré une erreur."
-            }
+              : "Cette page a rencontré une erreur."}
           </p>
           {this.state.error && (
-            <p className="mb-6 max-w-lg text-xs font-mono text-rose-400/70 bg-rose-400/5 rounded-lg px-4 py-2">
+            <p style={{
+              marginBottom: "24px",
+              maxWidth: "500px",
+              fontSize: "1.2rem",
+              fontFamily: "monospace",
+              color: "rgba(255,100,100,0.7)",
+              background: "rgba(255,100,100,0.05)",
+              borderRadius: "4px",
+              padding: "8px 16px",
+            }}>
               {this.state.error.message}
             </p>
           )}
@@ -120,9 +166,20 @@ class PageErrorBoundary extends Component<
               this.setState({ hasError: false, error: null });
               window.location.reload();
             }}
-            className="rounded-xl bg-[#00D4FF] px-8 py-3 text-sm font-bold uppercase tracking-wider text-black transition-all hover:brightness-110 cursor-pointer"
+            className="font-worldtext"
+            style={{
+              border: "none",
+              outline: "none",
+              cursor: "pointer",
+              fontSize: "1.3rem",
+              color: "#000",
+              background: "#baae93",
+              padding: "12px 32px",
+              borderRadius: "2px",
+              letterSpacing: "0.1rem",
+            }}
           >
-            Réessayer
+            RÉESSAYER
           </button>
         </div>
       );
@@ -145,14 +202,13 @@ function AscensionWiki() {
     preloaderComplete,
     setPreloaderComplete,
   } = useNavigation();
-  const { isDark, toggleTheme } = useTheme();
   const { isEditMode, loadContent } = useCms();
   const { data: session } = useSession();
   const contentRef = useRef<HTMLDivElement>(null);
-  const transitionRef = useRef<HTMLDivElement>(null);
   const searchParams = useSearchParams();
   const [rubriqueActive, setRubriqueActive] = useState(false);
 
+  // Skip preloader for non-root paths
   useEffect(() => {
     if (searchParams.get('bot') === 'true') {
       setPreloaderComplete(true);
@@ -168,24 +224,26 @@ function AscensionWiki() {
     }
   }, [preloaderComplete, setPreloaderComplete]);
 
-  useAudioNavigation();
-
+  // CMS edit mode
   useEffect(() => {
     if (!isEditMode) return;
     loadContent(currentPage);
   }, [currentPage, isEditMode, loadContent]);
 
+  // URL sync
   useEffect(() => {
     useNavigation.getState().hydrateFromUrl();
     return initUrlSync();
   }, []);
 
+  // Safety timeout for preloader
   useEffect(() => {
     if (preloaderComplete) return;
     const t = setTimeout(() => setPreloaderComplete(true), 6000);
     return () => clearTimeout(t);
   }, [preloaderComplete, setPreloaderComplete]);
 
+  // OAuth error handling
   useEffect(() => {
     const error = searchParams.get("error");
     if (error) {
@@ -201,84 +259,15 @@ function AscensionWiki() {
     }
   }, [searchParams]);
 
-  const themeTransition = useCallback(
-    (e: React.MouseEvent) => {
-      playThemeToggle();
-      const x = e.clientX;
-      const y = e.clientY;
-      const overlay = document.createElement("div");
-      overlay.style.cssText = `
-        position: fixed; inset: 0; z-index: 9500; pointer-events: none;
-        border-radius: 50%; transform: scale(0);
-        transform-origin: ${x}px ${y}px;
-      `;
-      overlay.style.background = isDark
-        ? "radial-gradient(circle, rgba(245,240,232,1) 0%, rgba(245,240,232,0.95) 50%, rgba(245,240,232,0.8) 100%)"
-        : "radial-gradient(circle, rgba(10,10,15,1) 0%, rgba(10,10,15,0.95) 50%, rgba(10,10,15,0.8) 100%)";
-      document.body.appendChild(overlay);
-      const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      if (prefersReduced) {
-        gsap.to(overlay, {
-          opacity: 0.7, duration: 0.3,
-          onComplete: () => {
-            toggleTheme(e);
-            gsap.to(overlay, { opacity: 0, duration: 0.3, onComplete: () => overlay.remove() });
-          },
-        });
-      } else {
-        const tl = gsap.timeline();
-        tl.to(overlay, {
-          scale: 5, duration: 0.5, ease: "power2.in",
-          onComplete: () => toggleTheme(e),
-        }).to(overlay, {
-          scale: 8, opacity: 0, duration: 0.4, ease: "power2.out",
-          onComplete: () => overlay.remove(),
-        }, "+=0.05");
-      }
-    },
-    [isDark, toggleTheme]
-  );
-
-  useEffect(() => {
-    if (!preloaderComplete) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("revealed");
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.15, rootMargin: "0px 0px -40px 0px" }
-    );
-    const elements = document.querySelectorAll(".gacha-reveal");
-    elements.forEach((el) => observer.observe(el));
-    const mutationObs = new MutationObserver(() => {
-      const newElements = document.querySelectorAll(".gacha-reveal:not(.revealed)");
-      newElements.forEach((el) => observer.observe(el));
-    });
-    mutationObs.observe(document.body, { childList: true, subtree: true });
-    return () => {
-      observer.disconnect();
-      mutationObs.disconnect();
-    };
-  }, [currentPage, preloaderComplete]);
-
+  // Scroll to top on page change
   useEffect(() => {
     if (preloaderComplete) {
       window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
     }
   }, [currentPage, preloaderComplete]);
 
-  useEffect(() => {
-    (window as unknown as Record<string, unknown>).__ascensionThemeTransition = themeTransition;
-    return () => {
-      delete (window as unknown as Record<string, unknown>).__ascensionThemeTransition;
-    };
-  }, [themeTransition]);
-
   const isGamePage = GAME_PAGE_IDS.includes(currentPage);
+  const isHomePage = currentPage === "home";
 
   const SafePage = ({ children, name }: { children: React.ReactNode; name: string }) => (
     <PageErrorBoundary pageName={name}>
@@ -374,7 +363,6 @@ function AscensionWiki() {
             </GamePageShell>
           </SafePage>
         );
-      // rubrique is handled as overlay, not as a page route
       default:
         return <HomePage />;
     }
@@ -383,47 +371,81 @@ function AscensionWiki() {
   return (
     <>
       {!preloaderComplete && <Preloader onComplete={() => setPreloaderComplete(true)} />}
-      <div ref={transitionRef} />
-      <div className="min-h-screen flex flex-col" style={{ display: rubriqueActive ? "none" : "flex" }}>
-        {!isGamePage && currentPage !== "home" && (
-          <Header mode="compact" onThemeToggle={themeTransition} />
-        )}
-        <main ref={contentRef} className="flex-1" key={currentPage}>
+
+      {/* DNA Header: always visible on all pages */}
+      {preloaderComplete && !isGamePage && <Header />}
+
+      <div
+        style={{
+          display: rubriqueActive ? "none" : "flex",
+          flexDirection: "column",
+          minHeight: "100vh",
+          background: "#000",
+        }}
+      >
+        <main
+          ref={contentRef}
+          style={{
+            flex: 1,
+            background: "#000",
+          }}
+          key={currentPage}
+        >
           {renderPage()}
         </main>
-        {!isGamePage && currentPage !== "home" && <Footer />}
+
+        {/* Footer: show on all non-home, non-game pages */}
+        {preloaderComplete && !isHomePage && !isGamePage && <Footer />}
       </div>
+
       <SearchOverlay />
+      <CMSToolbar />
+
+      {/* Session logout button on home */}
       {currentPage === "home" && session?.user && preloaderComplete && (
         <button
           onClick={() => signOut({ callbackUrl: "/" })}
-          className="fixed top-5 right-5 z-[90] flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 cursor-pointer group"
           style={{
+            position: "fixed",
+            top: "20px",
+            right: "20px",
+            zIndex: 90,
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "8px 12px",
             background: "rgba(255,255,255,0.06)",
-            backdropFilter: "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
             border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: "4px",
+            cursor: "pointer",
+            color: "rgba(255,255,255,0.5)",
+            fontSize: "1.2rem",
+            transition: "all 0.2s ease",
           }}
           title="Se déconnecter"
           aria-label="Se déconnecter"
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.9)";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.5)";
+          }}
         >
           {session.user.image && (
             <img
               src={session.user.image}
               alt=""
-              className="w-6 h-6 rounded-full ring-1 ring-white/10"
+              style={{ width: "24px", height: "24px", borderRadius: "50%", border: "1px solid rgba(255,255,255,0.1)" }}
             />
           )}
-          <span className="text-xs font-medium text-white/60 group-hover:text-white/90 transition-colors hidden sm:inline max-w-[80px] truncate">
+          <span style={{ maxWidth: "80px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {session.user.name}
           </span>
-          <LogOut size={13} className="text-white/40 group-hover:text-rose-400 transition-colors" />
+          <LogOut size={13} style={{ opacity: 0.6 }} />
         </button>
       )}
-      {currentPage !== "home" && !isGamePage && <AudioControls />}
-      <CMSToolbar />
 
-      {/* Rubrique portal — handles PortalButton when inactive, overlay when active */}
+      {/* Rubrique portal */}
       {currentPage === "home" && preloaderComplete && (
         <RubriqueApp isActive={rubriqueActive} onEnter={() => setRubriqueActive(true)} onExit={() => setRubriqueActive(false)} />
       )}
